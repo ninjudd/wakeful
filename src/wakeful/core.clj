@@ -34,9 +34,9 @@
     (-> (fn [{{:keys [method type id]} :route-params :as request}]
           (let [method (resolve-method ns-prefix type method method-suffix)]
             (method request)))
+        wrap
         wrap-params
-        wrap-json
-        wrap)))
+        wrap-json)))
 
 (def *bulk* nil)
 
