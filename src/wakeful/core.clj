@@ -6,7 +6,7 @@
   (:require [clj-json.core :as json]))
 
 (defn resolve-method [ns-prefix type method method-suffix]
-  (let [ns     (symbol (if type (str ns-prefix "." type) ns-prefix))
+  (let [ns     (symbol (if type (str (name ns-prefix) "." type) ns-prefix))
         method (when-not (.endsWith method "*")
                  (symbol (str method method-suffix)))]
       (require ns)
@@ -29,72 +29,78 @@
           (update :body json/generate-string)
           (assoc-in [:headers "Content-Type"] "application/json; charset=utf-8")))))
 
-(defn- router [ns-prefix & [wrap method-suffix]]
-  (let [wrap (or wrap identity)]
-    (-> (fn [{{:keys [method type id]} :route-params :as request}]
-          (let [method (resolve-method ns-prefix type method method-suffix)]
-            (method request)))
-        wrap
-        wrap-params
-        wrap-json)))
+(defn- ns-router [ns-prefix & [method-suffix]]
+  (fn [{{:keys [method type id]} :route-params :as request}]
+    (let [method (resolve-method ns-prefix type method method-suffix)]
+      (method request))))
+
+(defn- read-routes [read]
+  (routes (GET (route-compile "/:id" {:id #"\w+-\d+"}) {:as request}
+               (read (-> request
+                         (update :route-params assoc-type)
+                         (assoc-in [:route-params :method] "node"))))
+
+          (GET (route-compile "/:id/:method" {:id #"\w+-\d+"}) {:as request}
+               (read (update request :route-params assoc-type)))
+
+          (GET (route-compile "/:id/:method/*" {:id #"\w+-\d+"}) {:as request}
+               (read (update request :route-params assoc-type)))
+
+          (GET "/:type/:method" {:as request}
+               (read request))
+
+          (GET "/:type/:method/*" {:as request}
+               (read request))
+
+          (GET "/:method" {:as request}
+               (read request))))
+
+(defn- write-routes [write]
+  (routes (POST (route-compile "/:id/:method" {:id #"\w+-\d+"}) {:as request}
+                (write (update request :route-params assoc-type)))
+
+          (POST (route-compile "/:id/:method/*" {:id #"\w+-\d+"}) {:as request}
+                (write (update request :route-params assoc-type)))
+
+          (POST "/:type/:method" {:as request}
+                (write request))
+
+          (POST "/:type/:method/*" {:as request}
+                (write request))
+
+          (POST "/:method" {:as request}
+                (write request))))
 
 (def *bulk* nil)
 
-(defn- bulk [method handler & [wrap]]
+(defn- bulk [method handler]
   (fn [{:keys [body query-params]}]
     (binding [*bulk* true]
-      {:body (doall (map (fn [{:strs [path params body]}]
-                           (:body (handler
-                                   {:request-method method
-                                    :uri            path
-                                    :query-params   (merge query-params params)
-                                    :body           body})))
-                         body))})))
+      {:body (doall
+              (map (fn [[path params body]]
+                     (:body (handler
+                             {:request-method method
+                              :uri            path
+                              :query-params   (merge query-params (or params {}))
+                              :body           body})))
+                   body))})))
 
-(defn handler [ns-prefix & opts]
-  (let [opts       (into-map opts)
-        read       (router ns-prefix (:wrap-read opts))
-        write      (router ns-prefix (:wrap-write opts) "!")
-        bulk-read  (bulk :get  read  (:wrap-bulk-read opts))
-        bulk-write (bulk :post write (:wrap-bulk-write opts))]
-    (routes
-     (GET (route-compile "/:id" {:id #"\w+-\d+"}) {:as request}
-          (read (-> request
-                    (update :route-params assoc-type)
-                    (assoc-in [:route-params :method] "node"))))
+(defn- wrap [f wrap]
+  (if wrap (wrap f) f))
 
-     (GET (route-compile "/:id/:method" {:id #"\w+-\d+"}) {:as request}
-          (read (update request :route-params assoc-type)))
+(defn- bulk-routes [read write opts]
+  (let [bulk-read  (wrap (bulk :get  read)  (:wrap-bulk-read  opts))
+        bulk-write (wrap (bulk :post write) (:wrap-bulk-write opts))]
+    (routes (POST "/bulk-read" {:as request}
+                  (bulk-read request))
+            (POST "/bulk-write" {:as request}
+                  (bulk-write request)))))
 
-     (GET (route-compile "/:id/:method/*" {:id #"\w+-\d+"}) {:as request}
-          (read (update request :route-params assoc-type)))
-
-     (GET "/:type/:method" {:as request}
-          (read request))
-
-     (GET "/:type/:method/*" {:as request}
-          (read request))
-
-     (GET "/:method" {:as request}
-          (read request))
-
-     (POST (route-compile "/:id/:method" {:id #"\w+-\d+"}) {:as request}
-           (write (update request :route-params assoc-type)))
-
-     (POST (route-compile "/:id/:method/*" {:id #"\w+-\d+"}) {:as request}
-           (write (update request :route-params assoc-type)))
-
-     (POST "/:type/:method" {:as request}
-           (write request))
-
-     (POST "/:type/:method/*" {:as request}
-           (write request))
-
-     (POST "/bulk-read" {:as request}
-           (bulk-read request))
-
-     (POST "/bulk-write" {:as request}
-           (bulk-write request))
-
-     (POST "/:method" {:as request}
-           (write request)))))
+(defn wakeful [ns-prefix & opts]
+  (let [opts  (into-map opts)
+        read  (read-routes  (wrap (ns-router ns-prefix)     (:wrap-read  opts)))
+        write (write-routes (wrap (ns-router ns-prefix "!") (:wrap-write opts)))
+        bulk  (bulk-routes read write opts)]
+    (-> (routes read bulk write)
+        wrap-params
+        wrap-json)))
