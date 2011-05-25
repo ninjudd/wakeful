@@ -87,3 +87,8 @@
               ["baz!" "/bar-10/baz" nil              {"method" "baz", "type" "bar", "id" "bar-10"}]
               ["bar!" "/foo/bar"    [1 2 true false] {"method" "bar", "type" "foo"}]]
              (json/parse-string (:body response)))))))
+
+(deftest test-invalid-routes
+  (let [handler (wakeful "sample" :wrap-read wrap-body)]
+    (is (= nil (handler {:request-method :get, :uri "/foo/bar*"})))
+    (is (= nil (handler {:request-method :get, :uri "/foo?"})))))
