@@ -92,3 +92,8 @@
   (let [handler (wakeful "sample" :wrap-read wrap-body)]
     (is (= nil (handler {:request-method :get, :uri "/foo/bar*"})))
     (is (= nil (handler {:request-method :get, :uri "/foo?"})))))
+
+(deftest test-missing-routes
+  (let [handler (wakeful "sample" :wrap-read wrap-body)]
+    (is (= nil (handler {:request-method :get, :uri "/foo/bam"})))
+    (is (= nil (handler {:request-method :get, :uri "/intricate"})))))

@@ -8,10 +8,10 @@
 (defn resolve-method [ns-prefix type method method-suffix]
   (let [ns     (symbol (if type (str (name ns-prefix) "." type) ns-prefix))
         method (symbol (str method method-suffix))]
-      (require ns)
-      (or (ns-resolve ns method)
-          (throw (UnsupportedOperationException.
-                  (format "Unable to resolve method: %s/%s" ns method))))))
+    (or (try (require ns)
+             (ns-resolve ns method)
+             (catch java.io.FileNotFoundException e))
+        (throw (RuntimeException. "unresolved-method")))))
 
 (defn node-type [^String id]
   (let [i (.indexOf id "-")]
@@ -29,9 +29,16 @@
             (update :body json/generate-string)
             (assoc-in [:headers "Content-Type"] "application/json; charset=utf-8"))))))
 
+(defn- wrap-unresolved [handler]
+  (fn [request]
+    (try (handler request)
+         (catch RuntimeException e
+           (when-not (= "unresolved-method" (.getMessage e))
+             (throw e))))))
+
 (defn- ns-router [ns-prefix & [method-suffix]]
   (fn [{{:keys [method type id]} :route-params :as request}]
-    (let [method (resolve-method ns-prefix type method method-suffix)]
+    (when-let [method (resolve-method ns-prefix type method method-suffix)]
       (method request))))
 
 (defn route [pattern]
@@ -106,4 +113,5 @@
         bulk  (bulk-routes read write opts)]
     (-> (routes read bulk write)
         wrap-params
-        wrap-json)))
+        wrap-json
+        wrap-unresolved)))
