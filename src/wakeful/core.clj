@@ -5,12 +5,14 @@
         [clout.core :only [route-compile]])
   (:require [clj-json.core :as json]))
 
-(defn resolve-method [ns-prefix type method method-suffix]
-  (let [ns     (symbol (if type (str (name ns-prefix) "." type) ns-prefix))
-        method (symbol (str method method-suffix))]
+(defn resolve-method [ns-prefix type method]
+  (let [ns     (symbol (if type (str (name ns-prefix) "." (name type)) ns-prefix))
+        method (symbol (if (string? method) method (apply str method)))]
     (try (require ns)
          (ns-resolve ns method)
          (catch java.io.FileNotFoundException e))))
+
+(resolve-method "foo.graph" :bar ["un" :baz "!"])
 
 (defn node-type [^String id]
   (let [i (.indexOf id "-")]
@@ -30,7 +32,7 @@
 
 (defn- ns-router [ns-prefix wrapper & [method-suffix]]
   (fn [{{:keys [method type id]} :route-params :as request}]
-    (when-let [method (resolve-method ns-prefix type method method-suffix)]
+    (when-let [method (resolve-method ns-prefix type [method method-suffix])]
       (if (and wrapper (not (:no-wrap (meta method))))
         ((wrapper method) request)
         (method request)))))

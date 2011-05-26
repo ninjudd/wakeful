@@ -99,8 +99,10 @@
     (is (= nil (handler {:request-method :get, :uri "/foo/bam"})))
     (is (= nil (handler {:request-method :get, :uri "/intricate"})))))
 
-
 (deftest test-no-wrap
   (let [handler (wakeful "sample" :read wrap-body)]
     (is (= ["b!" "/b" {"method" "b"}]
            (json/parse-string (:body (handler {:request-method :get, :uri "/b"})))))))
+
+(deftest test-resolve-method-prefix
+  (is (= #'sample.foo/bar! (resolve-method "sample" :foo ["ba" "r" "!"]))))
