@@ -8,10 +8,9 @@
 (defn resolve-method [ns-prefix type method method-suffix]
   (let [ns     (symbol (if type (str (name ns-prefix) "." type) ns-prefix))
         method (symbol (str method method-suffix))]
-    (or (try (require ns)
-             (ns-resolve ns method)
-             (catch java.io.FileNotFoundException e))
-        (throw (RuntimeException. "unresolved-method")))))
+    (try (require ns)
+         (ns-resolve ns method)
+         (catch java.io.FileNotFoundException e))))
 
 (defn node-type [^String id]
   (let [i (.indexOf id "-")]
@@ -29,17 +28,12 @@
             (update :body json/generate-string)
             (assoc-in [:headers "Content-Type"] "application/json; charset=utf-8"))))))
 
-(defn- wrap-unresolved [handler]
-  (fn [request]
-    (try (handler request)
-         (catch RuntimeException e
-           (when-not (= "unresolved-method" (.getMessage e))
-             (throw e))))))
-
-(defn- ns-router [ns-prefix & [method-suffix]]
+(defn- ns-router [ns-prefix wrapper & [method-suffix]]
   (fn [{{:keys [method type id]} :route-params :as request}]
     (when-let [method (resolve-method ns-prefix type method method-suffix)]
-      (method request))))
+      (if wrapper
+        ((wrapper method) request)
+        (method request)))))
 
 (defn route [pattern]
   (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method #"[\w-]+"}))
@@ -83,24 +77,22 @@
 
 (def *bulk* nil)
 
-(defn- bulk [method handler]
-  (fn [{:keys [body query-params]}]
-    (binding [*bulk* true]
-      {:body (doall
-              (map (fn [[path params body]]
-                     (:body (handler
-                             {:request-method method
-                              :uri            path
-                              :query-params   (merge query-params (or params {}))
-                              :body           body})))
-                   body))})))
-
-(defn- wrap-if [f obj]
-  (if f (f obj) obj))
+(defn- bulk [request-method handler wrapper]
+  ((or wrapper identity)
+   (fn [{:keys [body query-params]}]
+     (binding [*bulk* true]
+       {:body (doall
+               (map (fn [[uri params body]]
+                      (:body (handler
+                              {:request-method request-method
+                               :uri            uri
+                               :query-params   (merge query-params (or params {}))
+                               :body           body})))
+                    body))}))))
 
 (defn- bulk-routes [read write opts]
-  (let [bulk-read  (wrap-if (:bulk-read  opts) (bulk :get  read))
-        bulk-write (wrap-if (:bulk-write opts) (bulk :post write))]
+  (let [bulk-read  (bulk :get  read  (:bulk-read  opts))
+        bulk-write (bulk :post write (:bulk-write opts))]
     (routes (POST "/bulk-read" {:as request}
                   (bulk-read request))
             (POST "/bulk-write" {:as request}
@@ -108,10 +100,9 @@
 
 (defn wakeful [ns-prefix & opts]
   (let [opts  (into-map opts)
-        read  (read-routes  (wrap-if (:read  opts) (ns-router ns-prefix)))
-        write (write-routes (wrap-if (:write opts) (ns-router ns-prefix (or (:write-suffix opts) "!"))))
+        read  (read-routes  (ns-router ns-prefix (:read  opts)))
+        write (write-routes (ns-router ns-prefix (:write opts) (or (:write-suffix opts) "!")))
         bulk  (bulk-routes read write opts)]
     (-> (routes read bulk write)
         wrap-params
-        wrap-json
-        wrap-unresolved)))
+        wrap-json)))
