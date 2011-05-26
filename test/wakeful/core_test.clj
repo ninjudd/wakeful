@@ -11,7 +11,7 @@
   (ByteArrayInputStream. (.getBytes (json/generate-string obj))))
 
 (deftest test-read
-  (let [handler (wakeful "sample" :wrap-read wrap-body)]
+  (let [handler (wakeful "sample" :read wrap-body)]
     (let [response (handler {:uri "/foo-1/foo", :request-method :get})]
       (is (= 200 (:status response)))
       (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
@@ -29,7 +29,7 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-top-level-read
-  (let [handler (wakeful "sample" :wrap-read wrap-body)]
+  (let [handler (wakeful "sample" :read wrap-body)]
     (let [response (handler {:uri "/a" :request-method :get})]
       (is (= 200 (:status response)))
       (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
@@ -37,7 +37,7 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-bulk-read
-  (let [handler (wakeful "sample" :wrap-read wrap-body)]
+  (let [handler (wakeful "sample" :read wrap-body)]
     (let [response (handler {:uri "/bulk-read", :request-method :post,
                              :body (json-stream [["/foo-1/foo"]
                                                  ["/bar-10/baz"]
@@ -50,7 +50,7 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-write
-  (let [handler (wakeful "sample" :wrap-write wrap-body)]
+  (let [handler (wakeful "sample" :write wrap-body)]
     (let [response (handler {:uri "/foo-1/foo", :request-method :post, :body (json-stream {"foo" 1})})]
       (is (= 200 (:status response)))
       (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
@@ -68,7 +68,7 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-top-level-write
-  (let [handler (wakeful "sample" :wrap-write wrap-body)]
+  (let [handler (wakeful "sample" :write wrap-body)]
     (let [response (handler {:uri "/b" :request-method :post})]
       (is (= 200 (:status response)))
       (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
@@ -76,7 +76,7 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-bulk-write
-  (let [handler (wakeful "sample" :wrap-write wrap-body)]
+  (let [handler (wakeful "sample" :write wrap-body)]
     (let [response (handler {:uri "/bulk-write", :request-method :post,
                              :body (json-stream [["/foo-1/foo" nil ["a" "b" "c"]]
                                                  ["/bar-10/baz"]
@@ -89,11 +89,12 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-invalid-routes
-  (let [handler (wakeful "sample" :wrap-read wrap-body)]
+  (let [handler (wakeful "sample" :read wrap-body)]
     (is (= nil (handler {:request-method :get, :uri "/foo/bar*"})))
-    (is (= nil (handler {:request-method :get, :uri "/foo?"})))))
+    (is (= nil (handler {:request-method :get, :uri "/foo?"})))
+    (is (= nil (handler {:request-method :get, :uri "/foo/bar!"})))))
 
 (deftest test-missing-routes
-  (let [handler (wakeful "sample" :wrap-read wrap-body)]
+  (let [handler (wakeful "sample" :read wrap-body)]
     (is (= nil (handler {:request-method :get, :uri "/foo/bam"})))
     (is (= nil (handler {:request-method :get, :uri "/intricate"})))))

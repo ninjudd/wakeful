@@ -99,8 +99,8 @@
   (if f (f obj) obj))
 
 (defn- bulk-routes [read write opts]
-  (let [bulk-read  (wrap-if (:wrap-bulk-read  opts) (bulk :get  read))
-        bulk-write (wrap-if (:wrap-bulk-write opts) (bulk :post write))]
+  (let [bulk-read  (wrap-if (:bulk-read  opts) (bulk :get  read))
+        bulk-write (wrap-if (:bulk-write opts) (bulk :post write))]
     (routes (POST "/bulk-read" {:as request}
                   (bulk-read request))
             (POST "/bulk-write" {:as request}
@@ -108,8 +108,8 @@
 
 (defn wakeful [ns-prefix & opts]
   (let [opts  (into-map opts)
-        read  (read-routes  (wrap-if (:wrap-read  opts) (ns-router ns-prefix)))
-        write (write-routes (wrap-if (:wrap-write opts) (ns-router ns-prefix (or (:write-suffix opts) "!"))))
+        read  (read-routes  (wrap-if (:read  opts) (ns-router ns-prefix)))
+        write (write-routes (wrap-if (:write opts) (ns-router ns-prefix (or (:write-suffix opts) "!"))))
         bulk  (bulk-routes read write opts)]
     (-> (routes read bulk write)
         wrap-params
