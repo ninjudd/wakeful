@@ -31,7 +31,7 @@
 (defn- ns-router [ns-prefix wrapper & [method-suffix]]
   (fn [{{:keys [method type id]} :route-params :as request}]
     (when-let [method (resolve-method ns-prefix type method method-suffix)]
-      (if wrapper
+      (if (and wrapper (not (:no-wrap (meta method))))
         ((wrapper method) request)
         (method request)))))
 

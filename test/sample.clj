@@ -5,3 +5,6 @@
 
 (defn b! [request]
   [:b! (:uri request) (:route-params request)])
+
+(defn b {:no-wrap true} [request]
+  {:body [:b! (:uri request) (:route-params request)]})
