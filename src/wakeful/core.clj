@@ -1,6 +1,6 @@
 (ns wakeful.core
   (:use compojure.core
-        [useful :only [update into-map]]
+        [useful :only [update into-map verify]]
         [ring.middleware.params :only [wrap-params]]
         [clout.core :only [route-compile]])
   (:require [clj-json.core :as json]))
@@ -12,12 +12,16 @@
          (ns-resolve ns method)
          (catch java.io.FileNotFoundException e))))
 
-(resolve-method "foo.graph" :bar ["un" :baz "!"])
-
 (defn node-type [^String id]
   (let [i (.indexOf id "-")]
     (when (not= -1 i)
       (.substring id 0 i))))
+
+(defn node-number [^String id & [node-type]]
+  (let [[type num] (.split id "-")]
+    (verify (or (nil? node-type) (= node-type type))
+            (format "node-id %s is not of type %s" id node-type))
+    (Long/parseLong num)))
 
 (defn- assoc-type [route-params]
   (assoc route-params :type (node-type (:id route-params))))
