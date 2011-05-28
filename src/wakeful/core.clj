@@ -2,7 +2,8 @@
   (:use compojure.core
         [useful :only [update into-map verify]]
         [ring.middleware.params :only [wrap-params]]
-        [clout.core :only [route-compile]])
+        [clout.core :only [route-compile]]
+        wakeful.docs)
   (:require [clj-json.core :as json]))
 
 (defn resolve-method [ns-prefix type method]
@@ -42,7 +43,7 @@
         (method request)))))
 
 (defn route [pattern]
-  (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method #"[\w-]+"}))
+  (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method #"[\w-]+" :ns #".*"}))
 
 (defn- read-routes [read]
   (routes (GET (route "/:id") {:as request}
@@ -104,11 +105,21 @@
             (POST "/bulk-write" {:as request}
                   (bulk-write request)))))
 
+(defn doc-routes [ns-prefix suffix]
+  (routes (GET "/docs" []
+               (generate-top ns-prefix suffix))
+          
+          (GET (route "/docs/:ns") {{ns :ns} :params}
+               (generate-page ns suffix))))
+
 (defn wakeful [ns-prefix & opts]
-  (let [opts  (into-map opts)
-        read  (read-routes  (ns-router ns-prefix (:read  opts)))
-        write (write-routes (ns-router ns-prefix (:write opts) (or (:write-suffix opts) "!")))
-        bulk  (bulk-routes read write opts)]
-    (-> (routes read bulk write)
+  (let [suffix    (or (:write-suffix opts) "!")
+        opts      (into-map opts)
+        read      (read-routes  (ns-router ns-prefix (:read  opts)))
+        write     (write-routes (ns-router ns-prefix (:write opts) suffix))
+        bulk      (bulk-routes read write opts)
+        docs      (when (or (:generate-docs? opts) true) (doc-routes ns-prefix suffix))
+        rs        (routes read bulk write)]
+    (-> (if docs (routes rs docs) rs)
         wrap-params
         wrap-json)))

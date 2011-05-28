@@ -3,4 +3,6 @@
   :dependencies [[clojure "1.2.0"]
                  [clojure-useful "0.3.8"]
                  [clj-json "0.3.1"]
-                 [compojure "0.6.3"]])
+                 [compojure "0.6.3"]
+                 [hiccup "0.3.5"]]
+  :dev-dependencies [[ring "0.3.8"]]) ; for some testing
