@@ -113,13 +113,16 @@
                (generate-page ns suffix))))
 
 (defn wakeful [ns-prefix & opts]
-  (let [suffix    (or (:write-suffix opts) "!")
-        opts      (into-map opts)
-        read      (read-routes  (ns-router ns-prefix (:read  opts)))
-        write     (write-routes (ns-router ns-prefix (:write opts) suffix))
-        bulk      (bulk-routes read write opts)
-        docs      (when (or (:generate-docs? opts) true) (doc-routes ns-prefix suffix))
-        rs        (routes read bulk write)]
-    (-> (if docs (routes rs docs) rs)
-        wrap-params
-        wrap-json)))
+  (let [{:keys [docs? write-suffix]
+         :or {docs? true, write-suffix "!"}
+         :as opts} (into-map opts)
+
+        suffix (or (:write-suffix opts) "!")
+        read   (read-routes  (ns-router ns-prefix (:read  opts)))
+        write  (write-routes (ns-router ns-prefix (:write opts) suffix))
+        bulk   (bulk-routes read write opts)
+        rs     (-> (routes read bulk write) wrap-params wrap-json)]
+    (routes
+     (when docs?
+       (doc-routes ns-prefix suffix))
+     rs)))
