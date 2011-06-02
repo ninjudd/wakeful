@@ -6,6 +6,8 @@
         wakeful.docs)
   (:require [clj-json.core :as json]))
 
+(defn foo [& all] "blah")
+
 (defn resolve-method [ns-prefix type method]
   (let [ns     (symbol (if type (str (name ns-prefix) "." (name type)) ns-prefix))
         method (symbol (if (string? method) method (apply str method)))]
@@ -27,13 +29,19 @@
 (defn- assoc-type [route-params]
   (assoc route-params :type (node-type (:id route-params))))
 
-(defn- wrap-json [handler]
+(defn- wrap-content-type [handler content-type]
   (fn [{body :body :as request}]
-    (let [body (when body (json/parse-string (slurp body)))]
+    (let [json? (.startsWith content-type "application/json")
+          body
+          (when body
+            (if json?
+              (json/parse-string (slurp body))
+              body))]
       (when-let [response (handler (assoc request :body body :form-params {}))]
-        (-> response
-            (update :body json/generate-string)
-            (assoc-in [:headers "Content-Type"] "application/json; charset=utf-8"))))))
+        (let [response (assoc-in response [:headers "Content-Type"] content-type)]
+          (if json?
+            (update response :body json/generate-string)
+            response))))))
 
 (defn- ns-router [ns-prefix wrapper & [method-suffix]]
   (fn [{{:keys [method type id]} :route-params :as request}]
@@ -113,15 +121,17 @@
                (generate-page ns suffix))))
 
 (defn wakeful [ns-prefix & opts]
-  (let [{:keys [docs? write-suffix]
-         :or {docs? true, write-suffix "!"}
+  (let [{:keys [docs? write-suffix content-type]
+         :or {docs? true
+              write-suffix "!"
+              content-type "application/json; charset=utf-8"}
          :as opts} (into-map opts)
 
         suffix (or (:write-suffix opts) "!")
         read   (read-routes  (ns-router ns-prefix (:read  opts)))
         write  (write-routes (ns-router ns-prefix (:write opts) suffix))
         bulk   (bulk-routes read write opts)
-        rs     (-> (routes read bulk write) wrap-params wrap-json)]
+        rs     (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
     (routes
      (when docs?
        (doc-routes ns-prefix suffix))
