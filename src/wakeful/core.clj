@@ -118,7 +118,7 @@
                (generate-top ns-prefix suffix))
           
           (GET (route "/docs/:ns") {{ns :ns} :params}
-               (generate-page ns suffix))))
+               (generate-page ns-prefix ns suffix))))
 
 (defn wakeful [ns-prefix & opts]
   (let [{:keys [docs? write-suffix content-type]

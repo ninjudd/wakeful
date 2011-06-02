@@ -5,7 +5,7 @@
 
 (defn extract-info
   "Extract important information from the meta map of a var."
-  [x] (-> x meta (select-keys [:name :arglists :doc])))
+  [x] (-> x meta (select-keys [:name :arglists :doc :ns])))
 
 (defn group-by-method
   "Returns a map of :read and :write."
@@ -18,12 +18,13 @@
 
 (defn generate-html
   "Generate HTML based on some information from metadata."
-  [v]
-  (let [{:keys [arglists doc name]} v]
+  [v ns-prefix]
+  (let [{:keys [arglists doc name ns]} v]
     (html
      [:a {:name name}]
      [:h3 name]
-     [:p (pr-str arglists)]
+     [:p (str "/" (subs (str ns) (inc (count ns-prefix))) "/" name)]
+     (when arglists [:p (pr-str arglists)])
      [:p doc])))
 
 (defn build-page
@@ -33,9 +34,9 @@
 (defn generate-page
   "Generate HTML documentation for all the public methods in a group of namespaces
    under a prefix."
-  [ns suffix]
+  [ns-prefix ns suffix]
   (let [{:keys [read write]} (group-by-method ns suffix)
-        gen (comp generate-html extract-info)]
+        gen #(-> % extract-info (generate-html ns-prefix))]
     (build-page
      ns
      (html
