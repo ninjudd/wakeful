@@ -28,7 +28,7 @@
 
 (defn- wrap-json [handler]
   (fn [{body :body :as request}]
-    (let [body (when body (json/parse-string (slurp body)))]
+    (let [body (when body (json/parse-string (if (string? body) body (slurp body))))]
       (when-let [response (handler (assoc request :body body :form-params {}))]
         (-> response
             (update :body json/generate-string)
