@@ -44,42 +44,52 @@
 (defn route [pattern]
   (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method #"[\w-]+"}))
 
+(defmacro READ [& forms]
+  `(fn [request#]
+     (or ((GET  ~@forms) request#)
+         ((HEAD ~@forms) request#))))
+
+(defmacro WRITE [& forms]
+  `(fn [request#]
+     (or ((POST ~@forms) request#)
+         ((PUT  ~@forms) request#))))
+
 (defn- read-routes [read]
-  (routes (GET (route "/:id") {:as request}
-               (read (-> request
-                         (update :route-params assoc-type)
-                         (assoc-in [:route-params :method] "node"))))
+  (routes (READ (route "/:id") {:as request}
+                (read (-> request
+                          (update :route-params assoc-type)
+                          (assoc-in [:route-params :method] "node"))))
 
-          (GET (route "/:id/:method") {:as request}
-               (read (update request :route-params assoc-type)))
+          (READ (route "/:id/:method") {:as request}
+                (read (update request :route-params assoc-type)))
 
-          (GET (route "/:id/:method/*") {:as request}
-               (read (update request :route-params assoc-type)))
+          (READ (route "/:id/:method/*") {:as request}
+                (read (update request :route-params assoc-type)))
 
-          (GET (route "/:type/:method") {:as request}
-               (read request))
+          (READ (route "/:type/:method") {:as request}
+                (read request))
 
-          (GET (route "/:type/:method/*") {:as request}
-               (read request))
+          (READ (route "/:type/:method/*") {:as request}
+                (read request))
 
-          (GET (route "/:method") {:as request}
-               (read request))))
+          (READ (route "/:method") {:as request}
+                (read request))))
 
 (defn- write-routes [write]
-  (routes (POST (route "/:id/:method") {:as request}
-                (write (update request :route-params assoc-type)))
+  (routes (WRITE (route "/:id/:method") {:as request}
+                 (write (update request :route-params assoc-type)))
 
-          (POST (route "/:id/:method/*") {:as request}
-                (write (update request :route-params assoc-type)))
+          (WRITE (route "/:id/:method/*") {:as request}
+                 (write (update request :route-params assoc-type)))
 
-          (POST (route "/:type/:method") {:as request}
-                (write request))
+          (WRITE (route "/:type/:method") {:as request}
+                 (write request))
 
-          (POST (route "/:type/:method/*") {:as request}
-                (write request))
+          (WRITE (route "/:type/:method/*") {:as request}
+                 (write request))
 
-          (POST (route "/:method") {:as request}
-                (write request))))
+          (WRITE (route "/:method") {:as request}
+                 (write request))))
 
 (def *bulk* nil)
 
