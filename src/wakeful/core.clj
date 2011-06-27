@@ -3,7 +3,8 @@
         [useful.map :only [update into-map]]
         [useful.utils :only [verify]]
         [ring.middleware.params :only [wrap-params]]
-        [clout.core :only [route-compile]])
+        [clout.core :only [route-compile]]
+        [ego.core :only [split-id]])
   (:require [clj-json.core :as json]))
 
 (defn resolve-method [ns-prefix type method]
@@ -14,15 +15,10 @@
          (catch java.io.FileNotFoundException e))))
 
 (defn node-type [^String id]
-  (let [i (.indexOf id "-")]
-    (when (not= -1 i)
-      (.substring id 0 i))))
+  (first (split-id id)))
 
-(defn node-number [^String id & [node-type]]
-  (let [[type num] (.split id "-")]
-    (verify (or (nil? node-type) (= node-type type))
-            (format "node-id %s is not of type %s" id node-type))
-    (Long/parseLong num)))
+(defn node-number [^String id & types]
+  (second (split-id id (set types))))
 
 (defn- assoc-type [route-params]
   (assoc route-params :type (node-type (:id route-params))))
