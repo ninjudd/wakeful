@@ -1,6 +1,7 @@
 (ns wakeful.core
   (:use compojure.core
-        [useful :only [update into-map verify]]
+        [useful.map :only [update into-map]]
+        [useful.utils :only [verify]]
         [ring.middleware.params :only [wrap-params]]
         [clout.core :only [route-compile]])
   (:require [clj-json.core :as json]))
