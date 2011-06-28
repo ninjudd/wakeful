@@ -10,9 +10,9 @@
 (defn group-by-method
   "Returns a map of :read and :write."
   [ns suffix]
-  (->> ns symbol ns-publics vals
+  (->> ns symbol ns-publics keys
        (group-by
-        #(if (.endsWith (str %) suffix)
+        #(if (.endsWith (name %) suffix)
            :write
            :read))))
 
