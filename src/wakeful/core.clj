@@ -30,18 +30,14 @@
   (assoc route-params :type (node-type (:id route-params))))
 
 (defn- wrap-content-type [handler content-type]
-  (fn [{body :body :as request}]
-    (let [json? (.startsWith content-type "application/json")
-          body
-          (when body
-            (if json?
-              (json/parse-string (slurp body))
-              body))]
-      (when-let [response (handler (assoc request :body body :form-params {}))]
-        (let [response (assoc-in response [:headers "Content-Type"] content-type)]
-          (if json?
-            (update response :body json/generate-string)
-            response))))))
+  (let [json? (.startsWith content-type "application/json")
+        [fix-request fix-response] (if json?
+                                     [#(when % (-> % slurp json/parse-string))
+                                      #(update % :body json/generate-string)]
+                                     [identity identity])]
+    (fn [{body :body :as request}]
+      (when-let [response (handler (assoc request :body (fix-request body) :form-params {}))]
+        (fix-response (assoc-in response [:headers "Content-Type"] content-type))))))
 
 (defn- ns-router [ns-prefix wrapper & [method-suffix]]
   (fn [{{:keys [method type id]} :route-params :as request}]
