@@ -116,7 +116,7 @@
 (defn doc-routes [ns-prefix suffix]
   (routes (GET "/docs" []
                (generate-top ns-prefix suffix))
-          
+
           (GET (route "/docs/:ns") {{ns :ns} :params}
                (generate-page ns-prefix ns suffix))))
 
