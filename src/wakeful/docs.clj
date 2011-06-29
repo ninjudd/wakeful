@@ -45,10 +45,13 @@
       [:h2 "Write"]
       (map gen write)))))
 
+(defn ns-url [ns]
+  (str "docs/" ns))
+
 (defn anchor
   "Creates anchors out of each of the items."
   [ns items]
-  (join " "  (map #(html [:a {:href (str "/docs/" ns "#" %)} %]) items)))
+  (join " " (map #(html [:a {:href (str (ns-url ns) "#" %)} %]) items)))
 
 (defn extract-name
   "Pull the name out of a var's metadata."
@@ -65,7 +68,7 @@
      [:body
       (for [ns nss]
         (html
-         [:a {:href (str "/docs/" ns)} ns]
+         [:a {:href (ns-url ns)} ns]
          [:br]
          (let [{:keys [read write]} (group-by-method ns suffix)
                name (partial map extract-name)]
