@@ -6,7 +6,8 @@
         [ring.middleware.params :only [wrap-params]]
         [clout.core :only [route-compile]]
         [ego.core :only [split-id]]
-        wakeful.docs)
+        wakeful.docs
+        clojure.tools.namespace)
   (:require [clj-json.core :as json]))
 
 (defn resolve-method [ns-prefix type method]
@@ -116,7 +117,13 @@
             (POST "/bulk-write" {:as request}
                   (bulk-write request)))))
 
+(defn- auto-require [prefix]
+  (doseq [ns (find-namespaces-on-classpath)]
+    (if (.startsWith (str ns) prefix)
+      (require ns))))
+
 (defn doc-routes [ns-prefix suffix]
+  (auto-require ns-prefix)
   (routes (GET "/docs" []
                (generate-top ns-prefix suffix))
 
@@ -124,10 +131,11 @@
                (generate-page ns-prefix ns suffix))))
 
 (defn wakeful [ns-prefix & opts]
-  (let [{:keys [docs? write-suffix content-type]
+  (let [{:keys [docs? write-suffix content-type auto-require]
          :or {docs? true
               write-suffix "!"
-              content-type "application/json; charset=utf-8"}
+              content-type "application/json; charset=utf-8"
+              auto-require false}
          :as opts} (into-map opts)
 
         suffix (or (:write-suffix opts) "!")
@@ -135,6 +143,7 @@
         write  (write-routes (ns-router ns-prefix (:write opts) suffix))
         bulk   (bulk-routes read write opts)
         rs     (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
+    (when auto-require (auto-require ns-prefix))
     (routes
      (when docs?
        (doc-routes ns-prefix suffix))
