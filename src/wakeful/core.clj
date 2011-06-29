@@ -2,6 +2,7 @@
   (:use compojure.core
         [useful.map :only [update into-map]]
         [useful.utils :only [verify]]
+        [useful.fn :only [transform-if]]
         [ring.middleware.params :only [wrap-params]]
         [clout.core :only [route-compile]]
         [ego.core :only [split-id]]
@@ -26,6 +27,7 @@
 
 (defn- wrap-content-type [handler content-type]
   (let [json? (.startsWith content-type "application/json")
+        slurp (transform-if (complement string?) slurp)
         [fix-request fix-response] (if json?
                                      [#(when % (-> % slurp json/parse-string))
                                       #(update % :body json/generate-string)]
