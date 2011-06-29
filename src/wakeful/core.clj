@@ -8,8 +8,6 @@
         wakeful.docs)
   (:require [clj-json.core :as json]))
 
-(defn foo [& all] "blah")
-
 (defn resolve-method [ns-prefix type method]
   (let [ns     (symbol (if type (str (name ns-prefix) "." (name type)) ns-prefix))
         method (symbol (if (string? method) method (apply str method)))]
