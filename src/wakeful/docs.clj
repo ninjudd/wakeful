@@ -7,14 +7,23 @@
   "Extract important information from the meta map of a var."
   [x] (-> x meta (select-keys [:name :arglists :doc :ns])))
 
+(defn include?
+  "Determine whether a name should be listed in the documentation."
+  [name suffix]
+  (let [[bare-name] (.split name (str (java.util.regex.Pattern/quote suffix)
+                                      "$"))]
+    (re-matches #"[\w-]+" bare-name)))
+
 (defn group-by-method
   "Returns a map of :read and :write."
   [ns suffix]
-  (->> ns symbol ns-publics vals
-       (group-by
-        #(if (.endsWith (name (:name (meta %))) suffix)
-           :write
-           :read))))
+  (let [var-name (comp name :name meta)]
+    (->> ns symbol ns-publics vals
+         (filter #(include? (var-name %) suffix))
+         (group-by
+          #(if (.endsWith (var-name %) suffix)
+             :write
+             :read)))))
 
 (defn generate-html
   "Generate HTML based on some information from metadata."
