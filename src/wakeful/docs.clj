@@ -1,40 +1,45 @@
 (ns wakeful.docs
   (:use compojure.core
         [hiccup core page-helpers]
-        [clojure.string :only [join]]))
+        [useful.debug :only [?]])
+  (:require [clojure.string :as s]))
 
-(defn extract-info
-  "Extract important information from the meta map of a var."
-  [x] (-> x meta (select-keys [:name :arglists :doc :ns])))
+(defn analyze-var [suffix var]
+  (let [{fn-name :name :as var-meta} (-> var meta (select-keys [:name :arglists :doc :ns :params]))
+        fn-name (str fn-name)
+        [bare-name write?] (seq (.split fn-name
+                                        (str "(?=" (java.util.regex.Pattern/quote suffix) "$)")))]
+    (into var-meta {:include? (re-matches #"[\w-]+" bare-name)
+                    :fn-name bare-name
+                    :http-method (if write? "POST" "GET")
+                    :write? (if write? :write :read)
+                    :args (some var-meta [:params :arglists])})))
 
-(defn include?
-  "Determine whether a name should be listed in the documentation."
-  [name suffix]
-  (let [[bare-name] (.split name (str (java.util.regex.Pattern/quote suffix)
-                                      "$"))]
-    (re-matches #"[\w-]+" bare-name)))
 
 (defn group-by-method
   "Returns a map of :read and :write."
   [ns suffix]
-  (let [var-name (comp name :name meta)]
-    (->> ns symbol ns-publics vals
-         (filter #(include? (var-name %) suffix))
-         (group-by
-          #(if (.endsWith (var-name %) suffix)
-             :write
-             :read)))))
+  (->> ns symbol ns-publics vals
+       (map (partial analyze-var suffix))
+       (filter :include?)
+       (group-by :write?)))
 
 (defn generate-html
   "Generate HTML based on some information from metadata."
   [v ns-prefix]
-  (let [{:keys [arglists doc name ns]} v]
+  (let [{:keys [args doc http-method fn-name ns write?]} v]
     (html
-     [:a {:name name}]
-     [:h3 name]
-     [:p (str "/" (subs (str ns) (inc (count ns-prefix))) "/" name)]
-     (when arglists [:p (pr-str arglists)])
-     [:p doc])))
+     [:div.fn {:id (s/join "-" [(name write?)
+                                (s/replace ns "." "-")
+                                fn-name])}
+      [:a {:name fn-name}]
+      [:h3 fn-name]
+      [:p
+       [:span.method http-method]
+       " "
+       [:span.url (str "/" (subs (str ns) (inc (count ns-prefix))) "/" fn-name)]
+       (when args [:p.args (pr-str args)])] ;; TODO customize arglists
+      [:p.doc doc]])))
 
 (defn build-page
   "Compose a documentation page."
@@ -45,7 +50,7 @@
    under a prefix."
   [ns-prefix ns suffix]
   (let [{:keys [read write]} (group-by-method ns suffix)
-        gen #(-> % extract-info (generate-html ns-prefix))]
+        gen #(generate-html % ns-prefix)]
     (build-page
      ns
      (html
@@ -60,11 +65,7 @@
 (defn anchor
   "Creates anchors out of each of the items."
   [ns items]
-  (join " " (map #(html [:a {:href (str (ns-url ns) "#" %)} %]) items)))
-
-(defn extract-name
-  "Pull the name out of a var's metadata."
-  [v] (-> v meta :name))
+  (s/join " " (map #(html [:a {:href (str (ns-url ns) "#" %)} %]) items)))
 
 (defn generate-top
   "Generate top-level page."
@@ -80,10 +81,10 @@
          [:a {:href (ns-url ns)} ns]
          [:br]
          (let [{:keys [read write]} (group-by-method ns suffix)
-               name (partial map extract-name)]
+               names (partial map :fn-name)]
            (html
-            (str "Read: " (anchor ns (name read)))
+            (str "Read: " (anchor ns (names read)))
             [:br]
-            (str "Write: " (anchor ns (name write)))))
+            (str "Write: " (anchor ns (names write)))))
          [:br]
          [:br]))])))
