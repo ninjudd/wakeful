@@ -63,9 +63,9 @@
   (let [nss (filter (partial re-find (-> ns-prefix str re-pattern))
                     (map str (all-ns)))]
     (html4
-     [:h1 "Namespaces under " ns-prefix]
      [:head (include-css "/css/docs.css")]
      [:body
+      [:h1 "Namespaces under " ns-prefix]
       (for [ns nss]
         (html
          [:a {:href (ns-url ns)} ns]
