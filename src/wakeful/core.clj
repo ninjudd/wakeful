@@ -138,13 +138,12 @@
               auto-require false}
          :as opts} (into-map opts)
 
-        suffix (or (:write-suffix opts) "!")
         read   (read-routes  (ns-router ns-prefix (:read  opts)))
-        write  (write-routes (ns-router ns-prefix (:write opts) suffix))
+        write  (write-routes (ns-router ns-prefix (:write opts) write-suffix))
         bulk   (bulk-routes read write opts)
         rs     (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
     (when auto-require (auto-require ns-prefix))
     (routes
      (when docs?
-       (doc-routes ns-prefix suffix))
+       (doc-routes ns-prefix write-suffix))
      rs)))
