@@ -80,7 +80,7 @@
   (let [nss (filter (partial re-find (-> ns-prefix str re-pattern))
                     (map str (all-ns)))]
     (html4
-     [:head (include-css "/css/docs.css")]
+     [:head (include-css "css/docs.css")]
      [:body
       [:div#outer-container
        [:h1#main-ns ns-prefix]
