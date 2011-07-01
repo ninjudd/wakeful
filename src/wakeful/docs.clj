@@ -65,8 +65,9 @@
 (defn generate-method-list
   "Creates anchors out of each of the items."
   [ns methods]
-  (for [m methods]
-    [:li [:a {:href (str (ns-url ns) "#" m)} m]]))
+  [:ul
+   (for [m methods]
+     [:li [:a {:href (str (ns-url ns) "#" m)} m]])])
 
 (defn generate-method-block [heading ns methods]
   (when-let [methods (seq (sort (map :fn-name methods)))]
