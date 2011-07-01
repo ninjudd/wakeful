@@ -28,22 +28,21 @@
   "Generate HTML based on some information from metadata."
   [v ns-prefix]
   (let [{:keys [args doc http-method fn-name ns write?]} v]
-    (html
-     [:div.fn {:id (s/join "-" [(name write?)
-                                (s/replace ns "." "-")
-                                fn-name])}
-      [:a {:name fn-name}]
-      [:h3 fn-name]
-      [:p
-       [:span.method http-method]
-       " "
-       [:span.url (str "/" (subs (str ns) (inc (count ns-prefix))) "/" fn-name)]
-       (when args [:p.args (pr-str args)])] ;; TODO customize arglists
-      [:p.doc doc]])))
+    [:div.fn {:id (s/join "-" [(name write?)
+                               (s/replace ns "." "-")
+                               fn-name])}
+     [:a {:name fn-name}]
+     [:h3 fn-name]
+     [:p
+      [:span.method http-method]
+      " "
+      [:span.url (str "/" (subs (str ns) (inc (count ns-prefix))) "/" fn-name)]
+      (when args [:p.args (pr-str args)])] ;; TODO customize arglists
+     [:p.doc doc]]))
 
 (defn build-page
   "Compose a documentation page."
-  [ns & components] (html4 [:body [:h1 ns] (apply str components)]))
+  [ns & components] (html4 [:body [:h1 ns] components]))
 
 (defn generate-page
   "Generate HTML documentation for all the public methods in a group of namespaces
@@ -51,13 +50,11 @@
   [ns-prefix ns suffix]
   (let [{:keys [read write]} (group-by-method ns suffix)
         gen #(generate-html % ns-prefix)]
-    (build-page
-     ns
-     (html
-      [:h2 "Read"]
-      (map gen (sort-by :fn-name read))
-      [:h2 "Write"]
-      (map gen (sort-by :fn-name write))))))
+    (build-page ns
+                [:h2 "Read"]
+                (map gen (sort-by :fn-name read))
+                [:h2 "Write"]
+                (map gen (sort-by :fn-name write)))))
 
 (defn ns-url [ns]
   (str "docs/" ns))
@@ -71,8 +68,8 @@
 
 (defn generate-method-block [heading ns methods]
   (when-let [methods (seq (sort (map :fn-name methods)))]
-    (html  [:p.route-type heading]
-           [:ul (generate-method-list ns methods)])))
+    (list  [:p.route-type heading]
+           (generate-method-list ns methods))))
 
 (defn generate-top
   "Generate top-level page."
@@ -85,8 +82,7 @@
       [:div#outer-container
        [:h1#main-ns ns-prefix]
        (for [ns (sort nss)]
-         (html
-          [:div.sub-ns [:h2 [:a {:href (ns-url ns)} ns]]
-           (let [{read-methods :read write-methods :write} (group-by-method ns suffix)]
-             (html (generate-method-block "writing" ns write-methods)
-                   (generate-method-block "reading" ns read-methods)))]))]])))
+         [:div.sub-ns [:h2 [:a {:href (ns-url ns)} ns]]
+          (let [{read-methods :read write-methods :write} (group-by-method ns suffix)]
+            (list (generate-method-block "writing" ns write-methods)
+                  (generate-method-block "reading" ns read-methods)))])]])))
