@@ -75,16 +75,15 @@
     (html4
      [:head (include-css "/css/docs.css")]
      [:body
-      [:h1 "Namespaces under " ns-prefix]
+      [:h1 ns-prefix]
       (for [ns nss]
         (html
-         [:a {:href (ns-url ns)} ns]
-         [:br]
-         (let [{:keys [read write]} (group-by-method ns suffix)
+         [:h2 [:a {:href (ns-url ns)} ns]]
+         (let [{read-methods :read write-methods :write} (group-by-method ns suffix)
                names (partial map :fn-name)]
            (html
-            (str "Read: " (anchor ns (names read)))
-            [:br]
-            (str "Write: " (anchor ns (names write)))))
-         [:br]
-         [:br]))])))
+            (list
+             (when-let [read-methods (names read-methods)]
+               (html [:h3 "Read:"] (anchor ns read-methods)))
+             (when-let [write-methods (names write-methods)]
+               (html [:h3 "Write:"] (anchor ns write-methods))))))))])))

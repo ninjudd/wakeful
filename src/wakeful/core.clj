@@ -117,10 +117,14 @@
             (POST "/bulk-write" {:as request}
                   (bulk-write request)))))
 
+(defn good-ns? [prefix ns]
+  (let [sns (str ns)]
+    (and (.startsWith sns prefix)
+         (not (re-find #"-test|test-" sns)))))
+
 (defn- auto-require [prefix]
-  (doseq [ns (find-namespaces-on-classpath)]
-    (if (.startsWith (str ns) prefix)
-      (require ns))))
+  (doseq [ns (filter (partial good-ns? prefix) (find-namespaces-on-classpath))]
+    (require ns)))
 
 (defn doc-routes [ns-prefix suffix]
   (auto-require ns-prefix)
