@@ -55,9 +55,9 @@
      ns
      (html
       [:h2 "Read"]
-      (map gen read)
+      (map gen (sort-by :fn-name read))
       [:h2 "Write"]
-      (map gen write)))))
+      (map gen (sort-by :fn-name write))))))
 
 (defn ns-url [ns]
   (str "docs/" ns))
@@ -69,7 +69,7 @@
     [:li [:a {:href (str (ns-url ns) "#" m)} m]]))
 
 (defn generate-method-block [heading ns methods]
-  (when-let [methods (seq (map :fn-name methods))]
+  (when-let [methods (seq (sort (map :fn-name methods)))]
     (html  [:p.route-type heading]
            [:ul (generate-method-list ns methods)])))
 
@@ -83,7 +83,7 @@
      [:body
       [:div#outer-container
        [:h1#main-ns ns-prefix]
-       (for [ns nss]
+       (for [ns (sort nss)]
          (html
           [:div.sub-ns [:h2 [:a {:href (ns-url ns)} ns]]
            (let [{read-methods :read write-methods :write} (group-by-method ns suffix)]
