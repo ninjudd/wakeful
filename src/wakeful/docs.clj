@@ -50,11 +50,9 @@
   [ns-prefix ns suffix]
   (let [{:keys [read write]} (group-by-method ns suffix)
         gen #(generate-html % ns-prefix)]
-    (build-page ns
-                [:h2 "Read"]
-                (map gen (sort-by :fn-name read))
-                [:h2 "Write"]
-                (map gen (sort-by :fn-name write)))))
+    (build-page ns (for [[title methods] [["Read" read] ["Write" write]]]
+                     (list [:h2 title]
+                           (map gen (sort-by :fn-name methods)))))))
 
 (defn ns-url [ns]
   (str "docs/" ns))
