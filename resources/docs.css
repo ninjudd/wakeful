@@ -9,6 +9,9 @@ li {
     display: inline;
     padding: 5px;
 }
+h2 {
+    margin: 0px;
+}
 
 #outer-container {
     margin: 0 auto;
