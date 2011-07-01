@@ -72,6 +72,7 @@
     (list  [:p.route-type heading]
            (generate-method-list ns methods))))
 
+
 (defn generate-top
   "Generate top-level page."
   [ns-prefix suffix]
@@ -87,4 +88,4 @@
           [:p (:doc (meta (find-ns (symbol ns))))]
           (let [{read-methods :read write-methods :write} (group-by-method ns suffix)]
              (list (generate-method-block "writing" ns write-methods)
-                   (generate-method-block "reading" ns read-methods)))]))]]))
+                   (generate-method-block "reading" ns read-methods)))])]])))
