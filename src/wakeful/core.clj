@@ -1,8 +1,10 @@
 (ns wakeful.core
   (:use compojure.core
+        [compojure.route :only [files]]
         [useful.map :only [update into-map]]
         [useful.utils :only [verify]]
         [useful.fn :only [transform-if]]
+        [useful.io :only [resource-stream]]
         [ring.middleware.params :only [wrap-params]]
         [clout.core :only [route-compile]]
         [ego.core :only [split-id]]
@@ -130,7 +132,9 @@
   (auto-require ns-prefix)
   (routes (GET "/docs" []
                (generate-top ns-prefix suffix))
-
+          (GET (route "/css/docs.css") []
+               {:body (slurp (resource-stream "docs.css"))
+                :headers {"Content-Type" "text/css"}})
           (GET (route "/docs/:ns") {{ns :ns} :params}
                (generate-page ns-prefix ns suffix))))
 
@@ -141,13 +145,11 @@
               content-type "application/json; charset=utf-8"
               auto-require false}
          :as opts} (into-map opts)
-
         read   (read-routes  (ns-router ns-prefix (:read  opts)))
         write  (write-routes (ns-router ns-prefix (:write opts) write-suffix))
         bulk   (bulk-routes read write opts)
         rs     (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
     (when auto-require (auto-require ns-prefix))
     (routes
-     (when docs?
-       (doc-routes ns-prefix write-suffix))
+     (when docs? (doc-routes ns-prefix write-suffix))
      rs)))

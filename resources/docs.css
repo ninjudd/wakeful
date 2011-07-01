@@ -1,0 +1,58 @@
+body {
+    font-family: helvetica, arial, freesans, clean, sans-serif;
+}
+a {
+    color: #4183C4;
+    text-decoration: none;
+}
+li {
+    display: inline;
+    padding: 5px;
+}
+h2 {
+    margin: 0px;
+}
+
+#outer-container {
+    margin: 0 auto;
+    margin-top: 0px;
+    margin-right: auto;
+    margin-bottom: 0px;
+    margin-left: auto;
+    width: 920px;
+    padding: 0 15px;
+    padding-top: 0px;
+    padding-right: 15px;
+    padding-bottom: 0px;
+    padding-left: 15px;
+}
+#ns-name {
+    margin: 0px;
+    padding: .5em 0;
+    overflow: hidden;
+}
+.route-type {
+    font-weight: bold;
+    color: #666;
+}
+.node-type {
+    margin: 20px;
+    padding: 10px;
+    background-color: #F8F8F8;
+    border-bottom-color: #CCC;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-left-color: #CCC;
+    border-left-style: solid;
+    border-left-width: 1px;
+    border-right-color: #CCC;
+    border-right-style: solid;
+    border-right-width: 1px;
+    border-top-color: #CCC;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-top-style: solid;
+    border-top-width: 1px;
+}

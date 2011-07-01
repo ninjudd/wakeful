@@ -62,10 +62,16 @@
 (defn ns-url [ns]
   (str "docs/" ns))
 
-(defn anchor
+(defn generate-method-list
   "Creates anchors out of each of the items."
-  [ns items]
-  (s/join " " (map #(html [:a {:href (str (ns-url ns) "#" %)} %]) items)))
+  [ns methods]
+  (for [m methods]
+    [:li [:a {:href (str (ns-url ns) "#" m)} m]]))
+
+(defn generate-method-block [heading ns methods]
+  (when-let [methods (seq (map :fn-name methods))]
+    (html  [:p.route-type heading]
+           [:ul (generate-method-list ns methods)])))
 
 (defn generate-top
   "Generate top-level page."
@@ -75,15 +81,11 @@
     (html4
      [:head (include-css "/css/docs.css")]
      [:body
-      [:h1 ns-prefix]
-      (for [ns nss]
-        (html
-         [:h2 [:a {:href (ns-url ns)} ns]]
-         (let [{read-methods :read write-methods :write} (group-by-method ns suffix)
-               names (partial map :fn-name)]
-           (html
-            (list
-             (when-let [read-methods (names read-methods)]
-               (html [:h3 "Read:"] (anchor ns read-methods)))
-             (when-let [write-methods (names write-methods)]
-               (html [:h3 "Write:"] (anchor ns write-methods))))))))])))
+      [:div#outer-container
+       [:h1#ns-name ns-prefix]
+       (for [ns nss]
+         (html
+          [:div.node-type [:h2 [:a {:href (ns-url ns)} ns]]
+           (let [{read-methods :read write-methods :write} (group-by-method ns suffix)]
+             (html (generate-method-block "writing" ns write-methods)
+                   (generate-method-block "reading" ns read-methods)))]))]])))
