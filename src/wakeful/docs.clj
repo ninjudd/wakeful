@@ -82,10 +82,10 @@
      [:head (include-css "/css/docs.css")]
      [:body
       [:div#outer-container
-       [:h1#ns-name ns-prefix]
+       [:h1#main-ns ns-prefix]
        (for [ns nss]
          (html
-          [:div.node-type [:h2 [:a {:href (ns-url ns)} ns]]
+          [:div.sub-ns [:h2 [:a {:href (ns-url ns)} ns]]
            (let [{read-methods :read write-methods :write} (group-by-method ns suffix)]
              (html (generate-method-block "writing" ns write-methods)
                    (generate-method-block "reading" ns read-methods)))]))]])))
