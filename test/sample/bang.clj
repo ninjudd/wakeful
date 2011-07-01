@@ -1,4 +1,5 @@
 (ns sample.bang
+  "This namespace contains a single read function."
   (:refer-clojure :exclude [read]))
 
 (defn read [request]

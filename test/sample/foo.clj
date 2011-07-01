@@ -1,4 +1,5 @@
-(ns sample.foo)
+(ns sample.foo
+  "This namespace contains two read and two write functions.")
 
 (defn foo [request]
   [:foo (:uri request) (:route-params request)])

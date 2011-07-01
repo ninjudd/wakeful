@@ -1,4 +1,5 @@
 (ns wakeful.docs
+  "Generates html documentation for a wakeful api"
   (:use compojure.core
         [hiccup core page-helpers]
         [useful.debug :only [?]])
@@ -42,7 +43,9 @@
 
 (defn build-page
   "Compose a documentation page."
-  [ns & components] (html4 [:body [:h1 ns] components]))
+  [ns & components] (html4
+                     [:head (include-css "./css/docs.css")]
+                     [:body [:h1 ns] components]))
 
 (defn generate-page
   "Generate HTML documentation for all the public methods in a group of namespaces
@@ -79,8 +82,9 @@
      [:body
       [:div#outer-container
        [:h1#main-ns ns-prefix]
-       (for [ns (sort nss)]
+       (for [ns nss]
          [:div.sub-ns [:h2 [:a {:href (ns-url ns)} ns]]
+          [:p (:doc (meta (find-ns (symbol ns))))]
           (let [{read-methods :read write-methods :write} (group-by-method ns suffix)]
-            (list (generate-method-block "writing" ns write-methods)
-                  (generate-method-block "reading" ns read-methods)))])]])))
+             (list (generate-method-block "writing" ns write-methods)
+                   (generate-method-block "reading" ns read-methods)))]))]]))
