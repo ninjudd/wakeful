@@ -3,13 +3,14 @@
   (:use compojure.core
         [hiccup core page-helpers]
         [useful.debug :only [?]])
-  (:require [clojure.string :as s]))
+  (:require [clojure.string :as s]
+            [wakeful.core :as core]))
 
 (defn parse-fn-name [fn-name write-suffix]
   (cond (.endsWith fn-name write-suffix)
         [(subs fn-name 0 (- (count fn-name) (count write-suffix))) :write]
 
-        (re-matches wakeful.core/method-regex fn-name)
+        (re-matches core/method-regex fn-name)
         [fn-name :read]
 
         :else [fn-name nil]))
