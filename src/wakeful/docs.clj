@@ -5,57 +5,50 @@
         [useful.debug :only [?]])
   (:require [clojure.string :as s]))
 
-(defn analyze-var [suffix var]
-  (let [{fn-name :name :as var-meta} (-> var meta (select-keys [:name :arglists :doc :ns :params]))
-        fn-name (str fn-name)
-        [bare-name write?] (seq (.split fn-name
-                                        (str "(?=" (java.util.regex.Pattern/quote suffix) "$)")))]
-    (into var-meta {:include? (re-matches #"[\w-]+" bare-name)
-                    :fn-name bare-name
-                    :http-method (if write? "POST" "GET")
-                    :write? (if write? :write :read)
-                    :args (some var-meta [:params :arglists])})))
+(defn parse-fn-name [fn-name write-suffix]
+  (cond (.endsWith fn-name write-suffix)
+        [(subs fn-name 0 (- (count fn-name) (count write-suffix))) :write]
 
+        (re-matches wakeful.core/method-regex fn-name)
+        [fn-name :read]
 
-(defn group-by-method
-  "Returns a map of :read and :write."
-  [ns suffix]
-  (->> ns symbol ns-publics vals
-       (map (partial analyze-var suffix))
-       (filter :include?)
-       (group-by :write?)))
+        :else [fn-name nil]))
 
-(defn generate-html
-  "Generate HTML based on some information from metadata."
-  [v ns-prefix]
-  (let [{:keys [args doc http-method fn-name ns write?]} v]
-    [:div.fn {:id (s/join "-" [(name write?)
-                               (s/replace ns "." "-")
-                               fn-name])}
-     [:a {:name fn-name}]
-     [:h3 fn-name]
-     [:p
-      [:span.method http-method]
-      " "
-      [:span.url (str "/" (subs (str ns) (inc (count ns-prefix))) "/" fn-name)]
-      (when args [:p.args (pr-str args)])] ;; TODO customize arglists
-     [:p.doc doc]]))
+(defn analyze-fn [write-suffix var]
+  (let [meta (-> var meta (select-keys [:name :arglists :doc :ns :params]))
+        [bare-name type] (parse-fn-name (str (:name meta)) write-suffix)]
+    (assoc meta
+      :bare-name bare-name
+      :type type
+      :args (some meta [:params :arglists]))))
 
-(defn build-page
-  "Compose a documentation page."
-  [ns & components] (html4
-                     [:head (include-css "./css/docs.css")]
-                     [:body [:h1 ns] components]))
+(defn get-ns-fns [ns]
+  (->> ns symbol ns-publics vals))
 
-(defn generate-page
-  "Generate HTML documentation for all the public methods in a group of namespaces
-   under a prefix."
-  [ns-prefix ns suffix]
-  (let [{:keys [read write]} (group-by-method ns suffix)
-        gen #(generate-html % ns-prefix)]
-    (build-page ns (for [[title methods] [["Read" read] ["Write" write]]]
-                     (list [:h2 title]
-                           (map gen (sort-by :fn-name methods)))))))
+(defn meta->html [method]
+  [:div.rounded-box
+   [:h2 (:bare-name method)]
+   [:span.title "params:"]
+   [:span.code-block (str (:args method))]
+   [:p (:doc method)]])
+
+(defn generate-docs-for-type [type methods]
+  (list [:h3.route-type (str (name type) " methods")]
+        (for [method (get methods type)]
+          (meta->html method))))
+
+(defn generate-ns-docs [ns-prefix ns write-suffix]
+  (let [methods (->> (get-ns-fns ns)
+                     (map (partial analyze-fn write-suffix))
+                     (group-by :type))]
+    (html4
+     [:head (include-css "../css/docs.css")]
+     [:body
+      [:div#outer-container
+       [:h1 ns]
+       [:p (:doc (meta (find-ns (symbol ns))))]
+       (generate-docs-for-type :read methods)
+       (generate-docs-for-type :write methods)]])))
 
 (defn ns-url [ns]
   (str "docs/" ns))
@@ -72,7 +65,6 @@
     (list  [:p.route-type heading]
            (generate-method-list ns methods))))
 
-
 (defn generate-top
   "Generate top-level page."
   [ns-prefix suffix]
@@ -84,7 +76,7 @@
       [:div#outer-container
        [:h1#main-ns ns-prefix]
        (for [ns nss]
-         [:div.sub-ns [:h2 [:a {:href (ns-url ns)} ns]]
+         [:div.rounded-box [:h2 [:a {:href (ns-url ns)} ns]]
           [:p (:doc (meta (find-ns (symbol ns))))]
           (let [{read-methods :read write-methods :write} (group-by-method ns suffix)]
              (list (generate-method-block "writing" ns write-methods)

@@ -46,8 +46,10 @@
         ((wrapper method) request)
         (method request)))))
 
+(def method-regex #"[\w-]+")
+
 (defn route [pattern]
-  (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method #"[\w-]+" :ns #".*"}))
+  (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method method-regex :ns #".*"}))
 
 (defmacro READ [& forms]
   `(fn [request#]
@@ -136,7 +138,7 @@
                {:body (slurp (resource-stream "docs.css"))
                 :headers {"Content-Type" "text/css"}})
           (GET (route "/docs/:ns") {{ns :ns} :params}
-               (generate-page ns-prefix ns suffix))))
+               (generate-ns-docs ns-prefix ns suffix))))
 
 (defn wakeful [ns-prefix & opts]
   (let [{:keys [docs? write-suffix content-type auto-require]
