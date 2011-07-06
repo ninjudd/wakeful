@@ -20,6 +20,7 @@
   "Turns a var's documentation meta-data into hiccup html"
   [doc-meta]
   [:div.rounded-box
+   [:a {:name (:name doc-meta)}]
    [:h2 (:bare-name doc-meta)]
    [:span.title "params:"]
    [:span.code-block (str (:args doc-meta))]
@@ -45,8 +46,8 @@
       [:div#outer-container
        [:h1 ns]
        [:p (:doc (meta (find-ns (symbol ns))))]
-       (docs-for-type :read methods)
-       (docs-for-type :write methods)]])))
+       (docs-for-type :write methods)
+       (docs-for-type :read methods)]])))
 
 (defn ns-url [ns]
   (str "docs/" ns))
@@ -54,10 +55,12 @@
 (defn generate-method-block
   "Create an HTML list of the methods contained in the specified ns"
   [heading ns methods]
-  (when-let [methods (seq (sort (map :name methods)))]
-    (list  [:p.route-type heading]
-           [:ul (for [m methods]
-                  [:li [:a {:href (str (ns-url ns) "#" m)} m]])])))
+  (when-let [methods (seq (sort-by :name methods))]
+    (list [:p.route-type heading]
+          [:ul (for [method methods]
+                 [:li [:a
+                       {:href (str (ns-url ns) "#" (:name method))}
+                       (:bare-name method)]])])))
 
 (defn generate-top
   "Generate top-level page."
@@ -73,6 +76,5 @@
          [:div.rounded-box [:h2 [:a {:href (ns-url ns)} ns]]
           [:p (:doc (meta (find-ns (symbol ns))))]
           (let [{read-methods :read write-methods :write} (group-by-type ns write-suffix)]
-            (prn :read-methods read-methods :write-methods write-methods)
             (list (generate-method-block "writing" ns write-methods)
                    (generate-method-block "reading" ns read-methods)))])]])))
