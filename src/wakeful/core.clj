@@ -1,55 +1,13 @@
 (ns wakeful.core
   (:use compojure.core
         [compojure.route :only [files]]
-        [useful.map :only [update into-map]]
         [useful.utils :only [verify]]
-        [useful.fn :only [transform-if]]
+        [useful.map :only [update into-map]]
         [useful.io :only [resource-stream]]
         [ring.middleware.params :only [wrap-params]]
-        [clout.core :only [route-compile]]
-        [ego.core :only [split-id]]
         wakeful.docs
-        clojure.tools.namespace)
-  (:require [clj-json.core :as json]))
-
-(defn resolve-method [ns-prefix type method]
-  (let [ns     (symbol (if type (str (name ns-prefix) "." (name type)) ns-prefix))
-        method (symbol (if (string? method) method (apply str method)))]
-    (try (require ns)
-         (ns-resolve ns method)
-         (catch java.io.FileNotFoundException e))))
-
-(defn node-type [^String id]
-  (first (split-id id)))
-
-(defn node-number [^String id & types]
-  (second (split-id id (set types))))
-
-(defn- assoc-type [route-params]
-  (assoc route-params :type (node-type (:id route-params))))
-
-(defn- wrap-content-type [handler content-type]
-  (let [json? (.startsWith content-type "application/json")
-        slurp (transform-if (complement string?) slurp)
-        [fix-request fix-response] (if json?
-                                     [#(when % (-> % slurp json/parse-string))
-                                      #(update % :body json/generate-string)]
-                                     [identity identity])]
-    (fn [{body :body :as request}]
-      (when-let [response (handler (assoc request :body (fix-request body) :form-params {}))]
-        (fix-response (assoc-in response [:headers "Content-Type"] content-type))))))
-
-(defn- ns-router [ns-prefix wrapper & [method-suffix]]
-  (fn [{{:keys [method type id]} :route-params :as request}]
-    (when-let [method (resolve-method ns-prefix type [method method-suffix])]
-      (if (and wrapper (not (:no-wrap (meta method))))
-        ((wrapper method) request)
-        (method request)))))
-
-(def method-regex #"[\w-]+")
-
-(defn route [pattern]
-  (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method method-regex :ns #".*"}))
+        wakeful.util
+        clojure.tools.namespace))
 
 (defmacro READ [& forms]
   `(fn [request#]
