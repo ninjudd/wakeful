@@ -35,9 +35,10 @@
   [ns-prefix ns write-suffix]
   (let [methods (group-by-type ns write-suffix)
         docs-for-type (fn [type methods]
-                        (list [:h3.route-type (str (name type) " methods")]
-                              (for [method (get methods type)]
-                                (meta->html method))))]
+                        (when-let [methods (seq (get methods type))]
+                          (list [:h3.route-type (str (name type) " methods")]
+                                (for [method methods]
+                                  (meta->html method)))))]
     (html4
      [:head (include-css "../css/docs.css")]
      [:body
@@ -53,7 +54,7 @@
 (defn generate-method-block
   "Create an HTML list of the methods contained in the specified ns"
   [heading ns methods]
-  (when-let [methods (seq (sort (map :fn-name methods)))]
+  (when-let [methods (seq (sort (map :name methods)))]
     (list  [:p.route-type heading]
            [:ul (for [m methods]
                   [:li [:a {:href (str (ns-url ns) "#" m)} m]])])))
@@ -72,5 +73,6 @@
          [:div.rounded-box [:h2 [:a {:href (ns-url ns)} ns]]
           [:p (:doc (meta (find-ns (symbol ns))))]
           (let [{read-methods :read write-methods :write} (group-by-type ns write-suffix)]
-             (list (generate-method-block "writing" ns write-methods)
+            (prn :read-methods read-methods :write-methods write-methods)
+            (list (generate-method-block "writing" ns write-methods)
                    (generate-method-block "reading" ns read-methods)))])]])))

@@ -55,3 +55,20 @@ h2 {
     border-top-style: solid;
     border-top-width: 1px;
 }
+.code-block {
+    margin-left: 5px;
+    font-family: Courier, monospace;
+    background-color: #FFFFE0;
+    border-bottom-color: #CCC;
+    border-bottom-style: solid;
+    border-bottom-width: 1px;
+    border-left-color: #CCC;
+    border-left-style: solid;
+    border-left-width: 1px;
+    border-right-color: #CCC;
+    border-right-style: solid;
+    border-right-width: 1px;
+    border-top-color: #CCC;
+    border-top-style: solid;
+    border-top-width: 1px;
+}
