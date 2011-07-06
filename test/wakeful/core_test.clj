@@ -1,5 +1,5 @@
 (ns wakeful.core-test
-  (:use clojure.test wakeful.core)
+  (:use clojure.test wakeful.core wakeful.util)
   (:require [clj-json.core :as json])
   (:import (java.io ByteArrayInputStream)))
 
