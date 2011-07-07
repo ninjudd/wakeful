@@ -2,8 +2,9 @@
   (:use compojure.core
         [compojure.route :only [files]]
         [useful.utils :only [verify]]
-        [useful.map :only [update into-map]]
+        [useful.map :only [update into-map map-keys-and-vals]]
         [useful.io :only [resource-stream]]
+        [useful.experimental :only [dispatcher]]
         [ring.middleware.params :only [wrap-params]]
         wakeful.docs
         wakeful.util
@@ -99,17 +100,30 @@
                (generate-ns-docs ns-prefix ns suffix))))
 
 (defn wakeful [ns-prefix & opts]
-  (let [{:keys [docs? write-suffix content-type auto-require]
+  (let [{:keys [docs? write-suffix content-type auto-require type-hierarchy]
          :or {docs? true
               write-suffix "!"
               content-type "application/json; charset=utf-8"
               auto-require false}
          :as opts} (into-map opts)
-        read   (read-routes  (ns-router ns-prefix (:read  opts)))
-        write  (write-routes (ns-router ns-prefix (:write opts) write-suffix))
-        bulk   (bulk-routes read write opts)
-        rs     (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
-    (when auto-require (auto-require ns-prefix))
+         hierarchy (map-keys-and-vals #(symbol (str ns-prefix "." (name %)))
+                                      type-hierarchy)
+         resolver  (fn [{{:keys [method type id]} :route-params :keys [request-method]}]
+                     (symbol (apply str
+                                    ns-prefix
+                                    (when type
+                                      ["." type]))
+                             (str method
+                                  (when (request-method #{:put :post}) ;; dry this
+                                    write-suffix))))
+         dispatch  (partial dispatcher resolver :type-hierarchy hierarchy :catch? true :wrapper)
+         read      (read-routes (dispatch (:read opts)))
+         write     (write-routes (dispatch (:write opts)))
+         bulk      (bulk-routes read write opts)
+         rs        (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
+    (when auto-require
+      (auto-require ns-prefix))
     (routes
-     (when docs? (doc-routes ns-prefix write-suffix))
+     (when docs?
+       (doc-routes ns-prefix write-suffix))
      rs)))
