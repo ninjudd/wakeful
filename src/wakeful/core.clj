@@ -4,10 +4,12 @@
         [compojure.route :only [files]]
         [clout.core :only [route-compile]]
         [useful.utils :only [verify]]
-        [useful.map :only [update into-map map-keys-and-vals]]
+        [useful.map :only [update into-map map-keys-and-vals keyed]]
         [useful.io :only [resource-stream]]
+        [useful.debug :only [?]]
         [ego.core :only [type-name]]
         [ring.middleware.params :only [wrap-params]]
+        [clojure.string :only [join split]]
         [clojure.tools.namespace :only [find-namespaces-on-classpath]])
   (:require [useful.dispatch :as dispatch]))
 
@@ -87,39 +89,43 @@
             (POST "/bulk-write" {:as request}
                   (bulk-write request)))))
 
-(defn- doc-routes [ns-prefix suffix]
+(defn- doc-routes [root suffix]
   (routes (GET "/docs" []
-               (generate-top ns-prefix suffix))
+               (generate-top root suffix))
           (GET (route "/css/docs.css") []
                {:body (slurp (resource-stream "docs.css"))
                 :headers {"Content-Type" "text/css"}})
           (GET (route "/docs/:ns") {{ns :ns} :params}
-               (generate-ns-docs ns-prefix ns suffix))))
+               (generate-ns-docs root ns suffix))))
 
-(defn dispatcher [ns-prefix & opts]
-  (let [{:keys [hierarchy wrap suffix]} (into-map opts)
-        hierarchy (map-keys-and-vals #(symbol (str ns-prefix "." (name %))) hierarchy)]
-    (dispatch/dispatcher
-     (fn [{{:keys [method type id]} :route-params :keys [request-method]}]
-       (symbol (apply str ns-prefix (when type ["." type]))
-               (str method suffix)))
-     :default  (with-meta (constantly nil) {:no-wrap true})
-     :hierarchy hierarchy
-     :wrap      wrap)))
+(defn- conjoin [sep & coll]
+  (join sep (remove nil? coll)))
 
-(defn wakeful [ns-prefix & opts]
-  (let [{:keys [docs? write-suffix content-type auto-require? hierarchy read write]
+(defn dispatcher [& opts]
+  (let [{:keys [root hierarchy wrap prefix suffix default]
+         :or {default (with-meta (constantly nil) {:no-wrap true})}} (into-map opts)
+        hierarchy (map-keys-and-vals #(symbol (conjoin "." root (name %))) hierarchy)]
+    (dispatch/dispatcher (fn [{{:keys [method type]} :route-params action :action}]
+                           (let [[type method] (if action
+                                                 (split action #"\.")
+                                                 [type method])]
+                             (symbol (conjoin "." root type)
+                                     (str prefix method suffix))))
+                         (keyed [default hierarchy wrap]))))
+
+(defn wakeful [& opts]
+  (let [{:keys [root docs? write-suffix content-type auto-require? hierarchy read write]
          :or {docs? true
               write-suffix "!"
               content-type "application/json; charset=utf-8"}
          :as opts} (into-map opts)
-         dispatch  (partial dispatcher ns-prefix :hierarchy hierarchy :wrap)
+         dispatch  (partial dispatcher :root root :hierarchy hierarchy :wrap)
          read      (read-routes  (dispatch read))
          write     (write-routes (dispatch write :suffix write-suffix))
          bulk      (bulk-routes read write opts)
-         docs      (when docs? (doc-routes ns-prefix write-suffix))]
+         docs      (when docs? (doc-routes root write-suffix))]
     (when auto-require?
-      (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? ns-prefix ns)]
+      (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? root ns)]
         (require ns)))
     (-> (routes docs read bulk write)
         wrap-params
