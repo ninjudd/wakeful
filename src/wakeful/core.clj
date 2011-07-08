@@ -1,13 +1,15 @@
 (ns wakeful.core
-  (:use compojure.core
+  (:use wakeful.docs wakeful.utils compojure.core
+        [wakeful.content-type :only [wrap-content-type]]
         [compojure.route :only [files]]
+        [clout.core :only [route-compile]]
         [useful.utils :only [verify]]
-        [useful.map :only [update into-map]]
+        [useful.map :only [update into-map map-keys-and-vals]]
         [useful.io :only [resource-stream]]
+        [ego.core :only [type-name]]
         [ring.middleware.params :only [wrap-params]]
-        wakeful.docs
-        wakeful.util
-        clojure.tools.namespace))
+        [clojure.tools.namespace :only [find-namespaces-on-classpath]])
+  (:require [useful.dispatch :as dispatch]))
 
 (defmacro READ [& forms]
   `(fn [request#]
@@ -18,6 +20,12 @@
   `(fn [request#]
      (or ((POST ~@forms) request#)
          ((PUT  ~@forms) request#))))
+
+(defn assoc-type [route-params]
+  (assoc route-params :type (type-name (:id route-params))))
+
+(defn- route [pattern]
+  (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method method-regex :ns #".*"}))
 
 (defn- read-routes [read]
   (routes (READ (route "/:id") {:as request}
@@ -79,17 +87,7 @@
             (POST "/bulk-write" {:as request}
                   (bulk-write request)))))
 
-(defn good-ns? [prefix ns]
-  (let [sns (str ns)]
-    (and (.startsWith sns prefix)
-         (not (re-find #"-test|test-" sns)))))
-
-(defn- auto-require [prefix]
-  (doseq [ns (filter (partial good-ns? prefix) (find-namespaces-on-classpath))]
-    (require ns)))
-
-(defn doc-routes [ns-prefix suffix]
-  (auto-require ns-prefix)
+(defn- doc-routes [ns-prefix suffix]
   (routes (GET "/docs" []
                (generate-top ns-prefix suffix))
           (GET (route "/css/docs.css") []
@@ -98,18 +96,31 @@
           (GET (route "/docs/:ns") {{ns :ns} :params}
                (generate-ns-docs ns-prefix ns suffix))))
 
+(defn dispatcher [ns-prefix & opts]
+  (let [{:keys [hierarchy wrap suffix]} (into-map opts)
+        hierarchy (map-keys-and-vals #(symbol (str ns-prefix "." (name %))) hierarchy)]
+    (dispatch/dispatcher
+     (fn [{{:keys [method type id]} :route-params :keys [request-method]}]
+       (symbol (apply str ns-prefix (when type ["." type]))
+               (str method suffix)))
+     :default  (with-meta (constantly nil) {:no-wrap true})
+     :hierarchy hierarchy
+     :wrap      wrap)))
+
 (defn wakeful [ns-prefix & opts]
-  (let [{:keys [docs? write-suffix content-type auto-require]
+  (let [{:keys [docs? write-suffix content-type auto-require? hierarchy read write]
          :or {docs? true
               write-suffix "!"
-              content-type "application/json; charset=utf-8"
-              auto-require false}
+              content-type "application/json; charset=utf-8"}
          :as opts} (into-map opts)
-        read   (read-routes  (ns-router ns-prefix (:read  opts)))
-        write  (write-routes (ns-router ns-prefix (:write opts) write-suffix))
-        bulk   (bulk-routes read write opts)
-        rs     (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
-    (when auto-require (auto-require ns-prefix))
-    (routes
-     (when docs? (doc-routes ns-prefix write-suffix))
-     rs)))
+         dispatch  (partial dispatcher ns-prefix :hierarchy hierarchy :wrap)
+         read      (read-routes  (dispatch read))
+         write     (write-routes (dispatch write :suffix write-suffix))
+         bulk      (bulk-routes read write opts)
+         docs      (when docs? (doc-routes ns-prefix write-suffix))]
+    (when auto-require?
+      (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? ns-prefix ns)]
+        (require ns)))
+    (-> (routes docs read bulk write)
+        wrap-params
+        (wrap-content-type content-type))))

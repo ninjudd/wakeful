@@ -1,20 +1,8 @@
 (ns wakeful.docs
   "Generates html documentation for a wakeful api"
-  (:use compojure.core
-        wakeful.util
-        [hiccup core page-helpers]
-        [useful.debug :only [?]])
+  (:use wakeful.utils compojure.core
+        [hiccup core page-helpers])
   (:require [clojure.string :as s]))
-
-(defn analyze-fn
-  "Returns an extended map of a vars meta-data"
-  [write-suffix var]
-  (let [meta (-> var meta (select-keys [:name :arglists :doc :ns :params]))
-        [bare-name type] (parse-fn-name (str (:name meta)) write-suffix)]
-    (assoc meta
-      :bare-name bare-name
-      :type type
-      :args (some meta [:params :arglists]))))
 
 (defn meta->html
   "Turns a var's documentation meta-data into hiccup html"
@@ -34,20 +22,21 @@
 (defn generate-ns-docs
   "Generate the documentation for the specified ns"
   [ns-prefix ns write-suffix]
-  (let [methods (group-by-type ns write-suffix)
-        docs-for-type (fn [type methods]
-                        (when-let [methods (seq (get methods type))]
-                          (list [:h3.route-type (str (name type) " methods")]
-                                (for [method methods]
-                                  (meta->html method)))))]
-    (html4
-     [:head (include-css "../css/docs.css")]
-     [:body
-      [:div#outer-container
-       [:h1 ns]
-       [:p (:doc (meta (find-ns (symbol ns))))]
-       (docs-for-type :write methods)
-       (docs-for-type :read methods)]])))
+  (when (valid-ns? ns-prefix ns)
+    (let [methods (group-by-type ns write-suffix)
+          docs-for-type (fn [type methods]
+                          (when-let [methods (seq (get methods type))]
+                            (list [:h3.route-type (str (name type) " methods")]
+                                  (for [method methods]
+                                    (meta->html method)))))]
+      (html4
+       [:head (include-css "../css/docs.css")]
+       [:body
+        [:div#outer-container
+         [:h1 ns]
+         [:p (:doc (meta (find-ns (symbol ns))))]
+         (docs-for-type :write methods)
+         (docs-for-type :read methods)]]))))
 
 (defn ns-url [ns]
   (str "docs/" ns))
@@ -65,16 +54,14 @@
 (defn generate-top
   "Generate top-level page."
   [ns-prefix write-suffix]
-  (let [nss (filter (partial re-find (-> ns-prefix str re-pattern))
-                    (map str (all-ns)))]
-    (html4
-     [:head (include-css "css/docs.css")]
-     [:body
-      [:div#outer-container
-       [:h1#main-ns ns-prefix]
-       (for [ns nss]
-         [:div.rounded-box [:h2 [:a {:href (ns-url ns)} ns]]
-          [:p (:doc (meta (find-ns (symbol ns))))]
-          (let [{read-methods :read write-methods :write} (group-by-type ns write-suffix)]
-            (list (generate-method-block "writing" ns write-methods)
-                   (generate-method-block "reading" ns read-methods)))])]])))
+  (html4
+   [:head (include-css "css/docs.css")]
+   [:body
+    [:div#outer-container
+     [:h1#main-ns ns-prefix]
+     (for [ns (map str (all-ns)) :when (valid-ns? ns-prefix ns)]
+       [:div.rounded-box [:h2 [:a {:href (ns-url ns)} ns]]
+        [:p (:doc (meta (find-ns (symbol ns))))]
+        (let [{read-methods :read write-methods :write} (group-by-type ns write-suffix)]
+          (list (generate-method-block "writing" ns write-methods)
+                (generate-method-block "reading" ns read-methods)))])]]))
