@@ -27,7 +27,7 @@
   (assoc route-params :type (type-name (:id route-params))))
 
 (defn- route [pattern]
-  (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method method-regex :ns #".*"}))
+  (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method method-regex}))
 
 (defn- read-routes [read]
   (routes (READ (route "/:id") {:as request}
