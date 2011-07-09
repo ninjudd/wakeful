@@ -1,7 +1,6 @@
 (ns wakeful.content-type
   (:use [useful.map :only [update]]
-        [useful.fn :only [!]]
-        [useful.utils :only [fix]]
+        [useful.fn :only [! fix]]
         [clojure.string :only [split]])
   (:require [clj-json.core :as json]))
 
