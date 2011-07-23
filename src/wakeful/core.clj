@@ -123,10 +123,9 @@
          read      (read-routes  (dispatch read))
          write     (write-routes (dispatch write :suffix write-suffix))
          bulk      (bulk-routes read write opts)
-         docs      (when docs? (doc-routes root write-suffix))]
-    (when auto-require?
+         docs      (when docs? (doc-routes root write-suffix))
+         rs        (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
+  (when auto-require?
       (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? root ns)]
         (require ns)))
-    (-> (routes docs read bulk write)
-        wrap-params
-        (wrap-content-type content-type))))
+  (routes rs docs)))
