@@ -104,7 +104,7 @@
 (defn dispatcher [& opts]
   (let [{:keys [root hierarchy wrap prefix suffix default]
          :or {default (with-meta (constantly nil) {:no-wrap true})}} (into-map opts)
-        hierarchy (map-keys-and-vals #(symbol (conjoin "." root (name %))) hierarchy)]
+        hierarchy (map-keys-and-vals hierarchy #(symbol (conjoin "." root (name %))))]
     (dispatch/dispatcher (fn [{{:keys [method type]} :route-params action :action}]
                            (let [[type method] (if action
                                                  (split action #"\.")
