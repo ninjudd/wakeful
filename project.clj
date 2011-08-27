@@ -10,4 +10,4 @@
                  [org.clojars.ninjudd/java.classpath "0.1.2-SNAPSHOT"]]
   :dev-dependencies [[ring "0.3.8"] ; for some testing
                      [org.clojars.flatland/cake-marginalia "0.6.1"]]
-  :tasks [cake-marginalia.tasks]) 
+  :tasks [cake-marginalia.tasks])
