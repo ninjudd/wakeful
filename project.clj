@@ -9,5 +9,5 @@
                  [org.clojure/tools.namespace "0.1.1" :exclusions [org.clojure/java.classpath]]
                  [org.clojars.ninjudd/java.classpath "0.1.2-SNAPSHOT"]]
   :dev-dependencies [[ring "0.3.8"] ; for some testing
-                     [org.clojars.flatland/cake-marginalia "0.6.1"]]
+                     [org.clojars.flatland/cake-marginalia "0.6.3"]]
   :tasks [cake-marginalia.tasks])
