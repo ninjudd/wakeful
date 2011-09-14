@@ -115,9 +115,10 @@
 
 (defn wakeful [& opts]
   (let [{:keys [root docs? write-suffix content-type auto-require? hierarchy read write]
-         :or {docs? true
-              write-suffix "!"
-              content-type "application/json; charset=utf-8"}
+         :or {docs?         true
+              auto-require? true
+              write-suffix  "!"
+              content-type  "application/json; charset=utf-8"}
          :as opts} (into-map opts)
          dispatch  (partial dispatcher :root root :hierarchy hierarchy :wrap)
          read      (read-routes  (dispatch read))
