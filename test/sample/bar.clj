@@ -1,4 +1,5 @@
-(ns sample.bar)
+(ns sample.bar
+  "This sample namespace contains a single read and a single write funciton")
 
 (defn baz [request]
   [:baz (:uri request) (:route-params request)])

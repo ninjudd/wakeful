@@ -1,5 +1,5 @@
 (ns wakeful.core-test
-  (:use clojure.test wakeful.core)
+  (:use clojure.test wakeful.core wakeful.utils)
   (:require [clj-json.core :as json])
   (:import (java.io ByteArrayInputStream)))
 
@@ -11,7 +11,7 @@
   (ByteArrayInputStream. (.getBytes (json/generate-string obj))))
 
 (deftest test-read
-  (let [handler (wakeful "sample" :wrap-read wrap-body)]
+  (let [handler (wakeful :root "sample" :read wrap-body)]
     (let [response (handler {:uri "/foo-1/foo", :request-method :get})]
       (is (= 200 (:status response)))
       (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
@@ -29,7 +29,7 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-top-level-read
-  (let [handler (wakeful "sample" :wrap-read wrap-body)]
+  (let [handler (wakeful :root "sample" :read wrap-body)]
     (let [response (handler {:uri "/a" :request-method :get})]
       (is (= 200 (:status response)))
       (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
@@ -37,20 +37,25 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-bulk-read
-  (let [handler (wakeful "sample" :wrap-read wrap-body)]
-    (let [response (handler {:uri "/bulk-read", :request-method :post,
-                             :body (json-stream [["/foo-1/foo"]
-                                                 ["/bar-10/baz"]
-                                                 ["/foo/bar" {"a" 1, "b" 2}]])})]
+  (let [handler (wakeful :root "sample" :read wrap-body)
+        post-data [["/foo-1/foo"]
+                   ["/bar-10/baz"]
+                   ["/foo/bar" {"a" 1, "b" 2}]]
+        request-map (fn [body]
+                      {:uri "/bulk-read", :request-method :post,
+                       :body body})]
+    (let [response (handler (request-map (json-stream post-data)))]
       (is (= 200 (:status response)))
       (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
       (is (= [["foo" "/foo-1/foo"  {"method" "foo", "type" "foo", "id" "foo-1"}]
               ["baz" "/bar-10/baz" {"method" "baz", "type" "bar", "id" "bar-10"}]
               ["bar" "/foo/bar"    {"method" "bar", "type" "foo"}]]
-             (json/parse-string (:body response)))))))
+             (json/parse-string (:body response))))
+      (testing "Can send JSON as string, not just stream"
+        (is (= response (handler (request-map (json/generate-string post-data)))))))))
 
 (deftest test-write
-  (let [handler (wakeful "sample" :wrap-write wrap-body)]
+  (let [handler (wakeful :root "sample" :write wrap-body)]
     (let [response (handler {:uri "/foo-1/foo", :request-method :post, :body (json-stream {"foo" 1})})]
       (is (= 200 (:status response)))
       (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
@@ -68,7 +73,7 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-top-level-write
-  (let [handler (wakeful "sample" :wrap-write wrap-body)]
+  (let [handler (wakeful :root "sample" :write wrap-body)]
     (let [response (handler {:uri "/b" :request-method :post})]
       (is (= 200 (:status response)))
       (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
@@ -76,7 +81,7 @@
              (json/parse-string (:body response)))))))
 
 (deftest test-bulk-write
-  (let [handler (wakeful "sample" :wrap-write wrap-body)]
+  (let [handler (wakeful :root "sample" :write wrap-body)]
     (let [response (handler {:uri "/bulk-write", :request-method :post,
                              :body (json-stream [["/foo-1/foo" nil ["a" "b" "c"]]
                                                  ["/bar-10/baz"]
@@ -87,3 +92,19 @@
               ["baz!" "/bar-10/baz" nil              {"method" "baz", "type" "bar", "id" "bar-10"}]
               ["bar!" "/foo/bar"    [1 2 true false] {"method" "bar", "type" "foo"}]]
              (json/parse-string (:body response)))))))
+
+(deftest test-invalid-routes
+  (let [handler (wakeful :root "sample" :read wrap-body)]
+    (is (= nil (handler {:request-method :get, :uri "/foo/bar*"})))
+    (is (= nil (handler {:request-method :get, :uri "/foo?"})))
+    (is (= nil (handler {:request-method :get, :uri "/foo/bar!"})))))
+
+(deftest test-missing-routes
+  (let [handler (wakeful :root "sample" :read wrap-body)]
+    (is (= nil (handler {:request-method :get, :uri "/foo/bam"})))
+    (is (= nil (handler {:request-method :get, :uri "/intricate"})))))
+
+(deftest test-no-wrap
+  (let [handler (wakeful :root "sample" :read wrap-body)]
+    (is (= ["b!" "/b" {"method" "b"}]
+           (json/parse-string (:body (handler {:request-method :get, :uri "/b"})))))))
