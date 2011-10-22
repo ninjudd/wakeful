@@ -9,7 +9,7 @@
 
 (defn parse-fn-name
   "Takes a wakeful function name and parses it. Returns the bare name, without extension, and :read, :write or nil."
-  [fn-name write-suffix]
+  [^String fn-name write-suffix]
   (cond (.endsWith fn-name write-suffix)
         [(subs fn-name 0 (- (count fn-name) (count write-suffix))) :write]
 
