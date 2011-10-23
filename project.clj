@@ -1,4 +1,4 @@
-(defproject wakeful "0.2.9"
+(defproject wakeful "0.2.10"
   :description "restful routing alternative"
   :dependencies [[clojure "1.2.0"]
                  [useful "0.7.3"]

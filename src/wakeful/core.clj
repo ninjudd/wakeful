@@ -5,7 +5,7 @@
         [clout.core :only [route-compile]]
         [useful.utils :only [verify]]
         [useful.map :only [update into-map map-keys-and-vals keyed]]
-        [useful.debug :only [?]]
+        [useful.fn :only [given]]
         [classlojure.io :only [resource-stream]]
         [ego.core :only [type-name]]
         [ring.middleware.params :only [wrap-params]]
@@ -125,7 +125,11 @@
          write     (write-routes (dispatch write :suffix write-suffix))
          bulk      (bulk-routes read write opts)
          docs      (when docs? (doc-routes root write-suffix))
-         rs        (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
+         rs        (-> (routes read bulk write)
+                       wrap-params
+                       (wrap-content-type content-type)
+                       (given (:context opts)
+                              ->> (context "/:servlet-context" [])))]
   (when auto-require?
     (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? root ns)]
       (require ns)))
