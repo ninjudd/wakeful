@@ -1,12 +1,11 @@
 (ns wakeful.core
   (:use wakeful.docs wakeful.utils compojure.core
         [wakeful.content-type :only [wrap-content-type]]
-        [compojure.route :only [files]]
+        [compojure.route :only [files resources]]
         [clout.core :only [route-compile]]
         [useful.utils :only [verify]]
         [useful.map :only [update into-map map-keys-and-vals keyed]]
         [useful.fn :only [given]]
-        [classlojure.io :only [resource-stream]]
         [ego.core :only [type-name]]
         [ring.middleware.params :only [wrap-params]]
         [clojure.string :only [join split]]
@@ -66,7 +65,7 @@
           (WRITE (route "/:method") {:as request}
                  (write request))))
 
-(def *bulk* nil)
+(def ^{:dynamic true} *bulk* nil)
 
 (defn- bulk [request-method handler wrapper]
   ((or wrapper identity)
@@ -92,9 +91,7 @@
 (defn- doc-routes [root suffix]
   (routes (GET "/docs" []
                (generate-top root suffix))
-          (GET (route "/css/docs.css") []
-               {:body (slurp (resource-stream "docs.css"))
-                :headers {"Content-Type" "text/css"}})
+          (resources "/")
           (GET (route "/docs/:ns") {{ns :ns} :params}
                (generate-ns-docs root ns suffix))))
 
