@@ -2,7 +2,7 @@
   (:use [useful.map :only [update]]
         [useful.fn :only [! fix]]
         [clojure.string :only [split]])
-  (:require [clj-json.core :as json]))
+  (:require [cheshire.core :as json]))
 
 (defn slurp-body [body]
   (fix body (! string?) slurp))

@@ -1,6 +1,6 @@
 (ns wakeful.core-test
   (:use clojure.test wakeful.core wakeful.utils)
-  (:require [clj-json.core :as json])
+  (:require [cheshire.core :as json])
   (:import (java.io ByteArrayInputStream)))
 
 (defn wrap-body [f]

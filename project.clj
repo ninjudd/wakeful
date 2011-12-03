@@ -2,7 +2,7 @@
   :description "restful routing alternative"
   :dependencies [[clojure "1.3.0"]
                  [useful "0.7.5-alpha3"]
-                 [clj-json "0.4.3"]
+                 [cheshire "2.0.4"]
                  [compojure "0.6.5"]
                  [ego "0.1.7"]
                  [hiccup "0.3.6"]
