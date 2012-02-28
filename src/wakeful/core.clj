@@ -126,7 +126,7 @@
                        wrap-params
                        (wrap-content-type content-type)
                        (given (:context opts)
-                              ->> (context "/:servlet-context" [])))]
+                              (->> (context "/:servlet-context" []))))]
   (when auto-require?
     (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? root ns)]
       (require ns)))

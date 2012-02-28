@@ -1,7 +1,7 @@
-(defproject wakeful "0.3.1"
+(defproject wakeful "0.3.2"
   :description "restful routing alternative"
   :dependencies [[clojure "1.3.0"]
-                 [useful "0.7.5"]
+                 [useful "0.8.0-alpha1"]
                  [clj-json "0.5.0"]
                  [compojure "1.0.0"]
                  [ring "1.0.1"]
