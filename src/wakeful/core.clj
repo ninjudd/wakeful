@@ -124,10 +124,10 @@
          docs      (when docs? (doc-routes root write-suffix))
          rs        (-> (routes read bulk write)
                        wrap-params
-                       (wrap-content-type content-type)
-                       (given (:context opts)
-                              (->> (context "/:servlet-context" []))))]
-  (when auto-require?
-    (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? root ns)]
-      (require ns)))
-  (routes rs docs)))
+                       (wrap-content-type content-type))]
+    (when auto-require?
+      (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? root ns)]
+        (require ns)))
+    (-> (routes rs docs)
+        (given (:context opts)
+               (->> (context "/:servlet-context" []))))))

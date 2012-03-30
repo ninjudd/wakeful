@@ -3,7 +3,8 @@
 (defn valid-ns? [prefix ns]
   (let [ns-name (str ns)]
     (and (.startsWith ns-name prefix)
-         (not (re-find #"-test|test-" ns-name)))))
+         (not (or (re-find #"-test|test-" ns-name) ;; cake: wakeful.utils-test, wakeful.test-utils
+                  (re-find #"(?<![^.])test\.[^.]+$" ns-name)))))) ;; lein: wakeful.test.utils
 
 (def method-regex #"[\w-]+")
 
