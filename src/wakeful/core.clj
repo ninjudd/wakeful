@@ -5,6 +5,7 @@
         [clout.core :only [route-compile]]
         [useful.utils :only [verify]]
         [useful.map :only [update into-map map-keys-and-vals keyed]]
+        [useful.parallel :only [pcollect]]
         [useful.fn :only [given]]
         [ego.core :only [type-name]]
         [ring.middleware.params :only [wrap-params]]
@@ -70,15 +71,19 @@
 (defn- bulk [request-method handler wrapper]
   ((or wrapper identity)
    (fn [{:keys [body query-params]}]
-     (binding [*bulk* true]
-       {:body (doall
-               (map (fn [[uri params body]]
-                      (:body (handler
-                              {:request-method request-method
-                               :uri            uri
-                               :query-params   (merge query-params (or params {}))
-                               :body           body})))
-                    body))}))))
+     (let [map (case (get query-params "parallel")
+                 ("pmap" "true") pmap
+                 "pcollect" pcollect
+                 map)]
+       (binding [*bulk* true]
+         {:body (doall
+                 (map (fn [[uri params body]]
+                          (:body (handler
+                                  {:request-method request-method
+                                   :uri            uri
+                                   :query-params   (merge query-params (or params {}))
+                                   :body           body})))
+                      body))})))))
 
 (defn- bulk-routes [read write opts]
   (let [bulk-read  (bulk :get  read  (:bulk-read  opts))
