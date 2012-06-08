@@ -1,6 +1,6 @@
 (defproject wakeful "0.3.3"
   :description "restful routing alternative"
-  :dependencies [[clojure "1.3.0"]
+  :dependencies [[org.clojure/clojure "1.3.0"]
                  [useful "0.8.0-alpha1"]
                  [clj-json "0.5.0"]
                  [compojure "1.0.0"]
