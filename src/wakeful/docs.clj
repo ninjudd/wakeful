@@ -1,7 +1,6 @@
 (ns wakeful.docs
   "Generates html documentation for a wakeful api"
-  (:use wakeful.utils compojure.core
-        [hiccup core page-helpers])
+  (:use wakeful.utils compojure.core hiccup.core hiccup.page)
   (:require [clojure.string :as s]))
 
 (defn meta->html

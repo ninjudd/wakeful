@@ -5,11 +5,11 @@
   :description "restful routing alternative"
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [useful "0.8.3-alpha8"]
+                 [ring "1.1.6"]
+                 [compojure "1.1.3"]
+                 [hiccup "1.0.1"]
                  [clj-json "0.5.0"]
-                 [compojure "1.0.0"]
-                 [ring "1.0.1"]
                  [ego "0.1.7"]
-                 [hiccup "0.3.8"]
                  [org.clojure/tools.namespace "0.1.1" :exclusions [org.clojure/java.classpath]]
                  [org.clojure/java.classpath "0.2.0"]]
   :aliases {"testall" ["with-profile" "dev,default:dev,1.3,default:dev,1.5,default" "test"]}
