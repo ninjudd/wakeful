@@ -1,6 +1,6 @@
-(ns wakeful.core
-  (:use wakeful.docs wakeful.utils compojure.core
-        [wakeful.content-type :only [wrap-content-type]]
+(ns flatland.wakeful.core
+  (:use flatland.wakeful.docs flatland.wakeful.utils compojure.core
+        [flatland.wakeful.content-type :only [wrap-content-type]]
         [compojure.route :only [files resources]]
         [clout.core :only [route-compile]]
         [useful.utils :only [verify]]

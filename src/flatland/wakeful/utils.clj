@@ -1,10 +1,10 @@
-(ns wakeful.utils)
+(ns flatland.wakeful.utils)
 
 (defn valid-ns? [prefix ns]
   (let [ns-name (str ns)]
     (and (.startsWith ns-name prefix)
-         (not (or (re-find #"-test|test-" ns-name) ;; cake: wakeful.utils-test, wakeful.test-utils
-                  (re-find #"(?<![^.])test\.[^.]+$" ns-name)))))) ;; lein: wakeful.test.utils
+         (not (or (re-find #"-test|test-" ns-name) ;; cake: flatland.wakeful.utils-test, flatland.wakeful.test-utils
+                  (re-find #"(?<![^.])test\.[^.]+$" ns-name)))))) ;; lein: flatland.wakeful.test.utils
 
 (def method-regex #"[\w-]+")
 

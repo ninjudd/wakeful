@@ -1,5 +1,5 @@
-(ns wakeful.core-test
-  (:use clojure.test wakeful.core wakeful.utils)
+(ns flatland.wakeful.core-test
+  (:use clojure.test flatland.wakeful.core flatland.wakeful.utils)
   (:require [clj-json.core :as json])
   (:import (java.io ByteArrayInputStream)))
 

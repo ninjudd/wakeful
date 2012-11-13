@@ -1,4 +1,4 @@
-(ns wakeful.content-type
+(ns flatland.wakeful.content-type
   (:use [useful.map :only [update]]
         [useful.fn :only [! fix]]
         [clojure.string :only [split]])
