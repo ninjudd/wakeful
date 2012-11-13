@@ -7,3 +7,5 @@ classes
 build
 ./wakeful
 docs
+target
+.lein-failures
