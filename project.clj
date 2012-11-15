@@ -1,17 +1,17 @@
-(defproject org.flatland/wakeful "0.4.0"
+(defproject org.flatland/wakeful "0.4.1-SNAPSHOT"
   :url "https://github.com/flatland/wakeful"
   :license {:name "Eclipse Public License - v 1.0"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :description "restful routing alternative"
   :dependencies [[org.clojure/clojure "1.4.0"]
-                 [useful "0.8.3-alpha8"]
+                 [org.clojure/java.classpath "0.2.0"]
+                 [org.clojure/tools.namespace "0.1.1"]
+                 [org.flatland/useful "0.8.9-SNAPSHOT"]
+                 [org.flatland/ego "0.1.9-SNAPSHOT"]
                  [ring "1.1.6"]
                  [compojure "1.1.3"]
                  [hiccup "1.0.1"]
-                 [clj-json "0.5.0"]
-                 [ego "0.1.7"]
-                 [org.clojure/tools.namespace "0.1.1" :exclusions [org.clojure/java.classpath]]
-                 [org.clojure/java.classpath "0.2.0"]]
+                 [clj-json "0.5.0"]]
   :aliases {"testall" ["with-profile" "dev,default:dev,1.3,default:dev,1.5,default" "test"]}
   :profiles {:1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}
              :1.5 {:dependencies [[org.clojure/clojure "1.5.0-master-SNAPSHOT"]]}}

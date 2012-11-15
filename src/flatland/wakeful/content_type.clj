@@ -1,6 +1,6 @@
 (ns flatland.wakeful.content-type
-  (:use [useful.map :only [update]]
-        [useful.fn :only [! fix]]
+  (:use [flatland.useful.map :only [update]]
+        [flatland.useful.fn :only [! fix]]
         [clojure.string :only [split]])
   (:require [clj-json.core :as json]))
 

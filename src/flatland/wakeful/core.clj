@@ -3,14 +3,14 @@
         [flatland.wakeful.content-type :only [wrap-content-type]]
         [compojure.route :only [files resources]]
         [clout.core :only [route-compile]]
-        [useful.utils :only [verify]]
-        [useful.map :only [update into-map map-keys-and-vals keyed]]
-        [useful.fn :only [given]]
-        [ego.core :only [type-name]]
+        [flatland.useful.utils :only [verify]]
+        [flatland.useful.map :only [update into-map map-keys-and-vals keyed]]
+        [flatland.useful.fn :only [given]]
+        [flatland.ego.core :only [type-name]]
         [ring.middleware.params :only [wrap-params]]
         [clojure.string :only [join split]]
         [clojure.tools.namespace :only [find-namespaces-on-classpath]])
-  (:require [useful.dispatch :as dispatch]))
+  (:require [flatland.useful.dispatch :as dispatch]))
 
 (defmacro READ [& forms]
   `(fn [request#]
