@@ -1,15 +1,16 @@
-(ns wakeful.utils)
+(ns flatland.wakeful.utils)
 
 (defn valid-ns? [prefix ns]
   (let [ns-name (str ns)]
     (and (.startsWith ns-name prefix)
-         (not (re-find #"-test|test-" ns-name)))))
+         (not (or (re-find #"-test|test-" ns-name) ;; cake: flatland.wakeful.utils-test, flatland.wakeful.test-utils
+                  (re-find #"(?<![^.])test\.[^.]+$" ns-name)))))) ;; lein: flatland.wakeful.test.utils
 
 (def method-regex #"[\w-]+")
 
 (defn parse-fn-name
   "Takes a wakeful function name and parses it. Returns the bare name, without extension, and :read, :write or nil."
-  [fn-name write-suffix]
+  [^String fn-name write-suffix]
   (cond (.endsWith fn-name write-suffix)
         [(subs fn-name 0 (- (count fn-name) (count write-suffix))) :write]
 

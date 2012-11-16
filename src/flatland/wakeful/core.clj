@@ -1,17 +1,16 @@
-(ns wakeful.core
-  (:use wakeful.docs wakeful.utils compojure.core
-        [wakeful.content-type :only [wrap-content-type]]
-        [compojure.route :only [files]]
+(ns flatland.wakeful.core
+  (:use flatland.wakeful.docs flatland.wakeful.utils compojure.core
+        [flatland.wakeful.content-type :only [wrap-content-type]]
+        [compojure.route :only [files resources]]
         [clout.core :only [route-compile]]
-        [useful.utils :only [verify]]
-        [useful.map :only [update into-map map-keys-and-vals keyed]]
-        [useful.debug :only [?]]
-        [classlojure.io :only [resource-stream]]
-        [ego.core :only [type-name]]
+        [flatland.useful.utils :only [verify]]
+        [flatland.useful.map :only [update into-map map-keys-and-vals keyed]]
+        [flatland.useful.fn :only [given]]
+        [flatland.ego.core :only [type-name]]
         [ring.middleware.params :only [wrap-params]]
         [clojure.string :only [join split]]
         [clojure.tools.namespace :only [find-namespaces-on-classpath]])
-  (:require [useful.dispatch :as dispatch]))
+  (:require [flatland.useful.dispatch :as dispatch]))
 
 (defmacro READ [& forms]
   `(fn [request#]
@@ -27,7 +26,7 @@
   (assoc route-params :type (type-name (:id route-params))))
 
 (defn- route [pattern]
-  (route-compile pattern {:id #"\w+-\d+" :type #"\w+" :method method-regex :ns #".*"}))
+  (route-compile pattern {:id #"\w+-[^/]+" :type #"\w+" :method method-regex :ns #".*"}))
 
 (defn- read-routes [read]
   (routes (READ (route "/:id") {:as request}
@@ -66,7 +65,7 @@
           (WRITE (route "/:method") {:as request}
                  (write request))))
 
-(def *bulk* nil)
+(def ^{:dynamic true} *bulk* nil)
 
 (defn- bulk [request-method handler wrapper]
   ((or wrapper identity)
@@ -92,9 +91,7 @@
 (defn- doc-routes [root suffix]
   (routes (GET "/docs" []
                (generate-top root suffix))
-          (GET (route "/css/docs.css") []
-               {:body (slurp (resource-stream "docs.css"))
-                :headers {"Content-Type" "text/css"}})
+          (resources "/")
           (GET (route "/docs/:ns") {{ns :ns} :params}
                (generate-ns-docs root ns suffix))))
 
@@ -125,8 +122,12 @@
          write     (write-routes (dispatch write :suffix write-suffix))
          bulk      (bulk-routes read write opts)
          docs      (when docs? (doc-routes root write-suffix))
-         rs        (-> (routes read bulk write) wrap-params (wrap-content-type content-type))]
-  (when auto-require?
-    (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? root ns)]
-      (require ns)))
-  (routes rs docs)))
+         rs        (-> (routes read bulk write)
+                       wrap-params
+                       (wrap-content-type content-type))]
+    (when auto-require?
+      (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? root ns)]
+        (require ns)))
+    (-> (routes rs docs)
+        (given (:context opts)
+               (->> (context "/:servlet-context" []))))))

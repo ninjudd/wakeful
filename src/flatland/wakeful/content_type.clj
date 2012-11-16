@@ -1,6 +1,6 @@
-(ns wakeful.content-type
-  (:use [useful.map :only [update]]
-        [useful.fn :only [! fix]]
+(ns flatland.wakeful.content-type
+  (:use [flatland.useful.map :only [update]]
+        [flatland.useful.fn :only [! fix]]
         [clojure.string :only [split]])
   (:require [clj-json.core :as json]))
 
@@ -21,7 +21,9 @@
     (-> body slurp-body json/parse-string)))
 
 (defmethod encode-body "application/json" [body content-type]
-  (json/generate-string body))
+  (try (json/generate-string body)
+       (catch Exception e
+         (Exception. (str "error JSON encoding body: " (prn-str body)) e))))
 
 (defn wrap-content-type [handler content-type]
   (fn [request]

@@ -1,5 +1,5 @@
-(ns wakeful.core-test
-  (:use clojure.test wakeful.core wakeful.utils)
+(ns flatland.wakeful.core-test
+  (:use clojure.test flatland.wakeful.core flatland.wakeful.utils)
   (:require [clj-json.core :as json])
   (:import (java.io ByteArrayInputStream)))
 
@@ -108,3 +108,12 @@
   (let [handler (wakeful :root "sample" :read wrap-body)]
     (is (= ["b!" "/b" {"method" "b"}]
            (json/parse-string (:body (handler {:request-method :get, :uri "/b"})))))))
+
+(deftest test-text-ids
+  (let [handler (wakeful :root "sample" :read wrap-body)]
+    (testing "allows characters, dashes, underscores, and numbers in an id"
+      (let [response (handler {:uri "/foo-a_b-1/foo", :request-method :get})]
+        (is (= 200 (:status response)))
+        (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
+        (is (= ["foo" "/foo-a_b-1/foo" {"type" "foo", "method" "foo", "id" "foo-a_b-1"}]
+               (json/parse-string (:body response))))))))

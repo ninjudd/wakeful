@@ -1,12 +1,20 @@
-(defproject wakeful "0.2.8"
+(defproject org.flatland/wakeful "0.5.0"
+  :url "https://github.com/flatland/wakeful"
+  :license {:name "Eclipse Public License - v 1.0"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
   :description "restful routing alternative"
-  :dependencies [[clojure "1.2.0"]
-                 [useful "0.7.0"]
-                 [clj-json "0.4.2"]
-                 [compojure "0.6.3"]
-                 [ego "0.1.7"]
-                 [hiccup "0.3.5"]
-                 [classlojure "0.6.1"]
-                 [org.clojure/tools.namespace "0.1.1" :exclusions [org.clojure/java.classpath]]
-                 [org.clojars.ninjudd/java.classpath "0.1.2-SNAPSHOT"]]
-  :test-dependencies [[ring "0.3.8"]])
+  :dependencies [[org.clojure/clojure "1.4.0"]
+                 [org.clojure/java.classpath "0.2.0"]
+                 [org.clojure/tools.namespace "0.1.1"]
+                 [org.flatland/useful "0.9.0"]
+                 [org.flatland/ego "0.2.0"]
+                 [ring "1.1.6"]
+                 [compojure "1.1.3"]
+                 [hiccup "1.0.1"]
+                 [clj-json "0.5.0"]]
+  :aliases {"testall" ["with-profile" "dev,default:dev,1.3,default:dev,1.5,default" "test"]}
+  :profiles {:1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}
+             :1.5 {:dependencies [[org.clojure/clojure "1.5.0-master-SNAPSHOT"]]}}
+  :repositories {"sonatype-snapshots" {:url "http://oss.sonatype.org/content/repositories/snapshots"
+                                       :snapshots true
+                                       :releases {:checksum :fail :update :always}}})
