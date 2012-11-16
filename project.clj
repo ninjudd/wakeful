@@ -1,4 +1,4 @@
-(defproject org.flatland/wakeful "0.4.1-SNAPSHOT"
+(defproject org.flatland/wakeful "0.5.0"
   :url "https://github.com/flatland/wakeful"
   :license {:name "Eclipse Public License - v 1.0"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -6,8 +6,8 @@
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/java.classpath "0.2.0"]
                  [org.clojure/tools.namespace "0.1.1"]
-                 [org.flatland/useful "0.8.9-SNAPSHOT"]
-                 [org.flatland/ego "0.1.9-SNAPSHOT"]
+                 [org.flatland/useful "0.9.0"]
+                 [org.flatland/ego "0.2.0"]
                  [ring "1.1.6"]
                  [compojure "1.1.3"]
                  [hiccup "1.0.1"]
