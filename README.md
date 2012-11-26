@@ -5,7 +5,7 @@ api to namespaces in your project.
 
 # Usage
 
-    (use 'wakeful.core)
+    (use 'flatland.wakeful.core)
 
     (def handler (wakeful "awesome.api"))
 
