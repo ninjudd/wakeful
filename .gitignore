@@ -1,11 +1,12 @@
-.cake
 pom.xml
+pom.xml.asc
 *.jar
 *.war
+*~
 lib
 classes
 build
 ./wakeful
 docs
 target
-.lein-failures
+.lein*
