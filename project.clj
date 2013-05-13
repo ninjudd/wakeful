@@ -6,7 +6,7 @@
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [org.clojure/java.classpath "0.2.0"]
                  [org.clojure/tools.namespace "0.1.1"]
-                 [org.flatland/useful "0.9.0"]
+                 [org.flatland/useful "0.10.1"]
                  [org.flatland/ego "0.2.0"]
                  [ring "1.1.6"]
                  [compojure "1.1.3"]
