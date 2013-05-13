@@ -54,6 +54,10 @@
       (testing "Can send JSON as string, not just stream"
         (is (= response (handler (request-map (json/generate-string post-data)))))))))
 
+(deftest test-internal-method-inaccessible
+  (let [handler (wakeful :root "sample" :read wrap-body)]
+    (is (= nil (handler {:uri "/foo/-foo", :request-method :get})))))
+
 (deftest test-write
   (let [handler (wakeful :root "sample" :write wrap-body)]
     (let [response (handler {:uri "/foo-1/foo", :request-method :post, :body (json-stream {"foo" 1})})]

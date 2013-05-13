@@ -6,7 +6,7 @@
          (not (or (re-find #"-test|test-" ns-name) ;; cake: flatland.wakeful.utils-test, flatland.wakeful.test-utils
                   (re-find #"(?<![^.])test\.[^.]+$" ns-name)))))) ;; lein: flatland.wakeful.test.utils
 
-(def method-regex #"[\w-]+")
+(def method-regex #"\w[\w-]*")
 
 (defn parse-fn-name
   "Takes a wakeful function name and parses it. Returns the bare name, without extension, and :read, :write or nil."

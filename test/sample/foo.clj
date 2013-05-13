@@ -1,6 +1,11 @@
 (ns sample.foo
   "This namespace contains two read and two write functions.")
 
+(defn -foo
+  "This is an internal method that should not be accessible."
+  [& args]
+  (prn args))
+
 (defn foo
   "This is the foo read method"
   [request]
