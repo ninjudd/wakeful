@@ -99,25 +99,28 @@
   (join sep (remove nil? coll)))
 
 (defn dispatcher [& opts]
-  (let [{:keys [root hierarchy wrap prefix suffix default]
+  (let [{:keys [root hierarchy wrap prefix suffix default config]
          :or {default (with-meta (constantly nil) {:no-wrap true})}} (into-map opts)
         hierarchy (map-keys-and-vals hierarchy #(symbol (conjoin "." root (name %))))]
-    (dispatch/dispatcher (fn [{{:keys [method type]} :route-params action :action}]
-                           (let [[type method] (if action
-                                                 (split action #"\.")
-                                                 [type method])]
-                             (symbol (conjoin "." root type)
-                                     (str prefix method suffix))))
-                         (keyed [default hierarchy wrap]))))
+    (-> (dispatch/dispatcher (fn [& args]
+                               (let [{{:keys [method type]} :route-params action :action} (last args)
+                                     [type method] (if action
+                                                     (split action #"\.")
+                                                     [type method])]
+                                 (symbol (conjoin "." root type)
+                                         (str prefix method suffix))))
+                             (keyed [default hierarchy wrap]))
+        (given (seq config)
+               (partial config)))))
 
 (defn wakeful [& opts]
-  (let [{:keys [root docs? write-suffix content-type auto-require? hierarchy read write]
+  (let [{:keys [root docs? write-suffix content-type auto-require? hierarchy read write config]
          :or {docs?         true
               auto-require? true
               write-suffix  "!"
               content-type  "application/json; charset=utf-8"}
          :as opts} (into-map opts)
-         dispatch  (partial dispatcher :root root :hierarchy hierarchy :wrap)
+         dispatch  (partial dispatcher :root root :hierarchy hierarchy :config config :wrap)
          read      (read-routes  (dispatch read))
          write     (write-routes (dispatch write :suffix write-suffix))
          bulk      (bulk-routes read write opts)

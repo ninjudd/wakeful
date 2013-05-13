@@ -117,3 +117,17 @@
         (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
         (is (= ["foo" "/foo-a_b-1/foo" {"type" "foo", "method" "foo", "id" "foo-a_b-1"}]
                (json/parse-string (:body response))))))))
+
+(deftest test-config
+  (let [config {"a" 1 "b" 2}
+        handler (wakeful :root "sample2" :config config)]
+    (let [response (handler {:uri "/foo-8/bar", :request-method :get})]
+      (is (= 200 (:status response)))
+      (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
+      (is (= ["bar" "/foo-8/bar" {"type" "foo", "method" "bar", "id" "foo-8"} config]
+             (json/parse-string (:body response)))))
+    (let [response (handler {:uri "/foo/bar", :request-method :get})]
+      (is (= 200 (:status response)))
+      (is (re-matches #"application/json.*" (get-in response [:headers "Content-Type"])))
+      (is (= ["bar" "/foo/bar" {"type" "foo", "method" "bar"} config]
+             (json/parse-string (:body response)))))))
