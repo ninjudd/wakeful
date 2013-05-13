@@ -1,4 +1,4 @@
-(defproject org.flatland/wakeful "0.5.2-SNAPSHOT"
+(defproject org.flatland/wakeful "0.5.2"
   :url "https://github.com/flatland/wakeful"
   :license {:name "Eclipse Public License - v 1.0"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
