@@ -1,5 +1,5 @@
-.cake
 pom.xml
+pom.xml.asc
 *.jar
 *.war
 lib
