@@ -91,7 +91,6 @@
 (defn- doc-routes [root suffix]
   (routes (GET "/docs" []
                (generate-top root suffix))
-          (resources "/")
           (GET (route "/docs/:ns") {{ns :ns} :params}
                (generate-ns-docs root ns suffix))))
 
@@ -131,6 +130,6 @@
     (when auto-require?
       (doseq [ns (find-namespaces-on-classpath) :when (valid-ns? root ns)]
         (require ns)))
-    (-> (routes rs docs)
+    (-> (routes rs docs (resources "/"))
         (given (:context opts)
                (->> (context "/:servlet-context" []))))))
